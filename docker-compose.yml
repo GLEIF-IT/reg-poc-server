@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+
+  web:
+    build: ./
+    image: web
+    container_name: web
+    ports:
+      - 8000:8000
+    volumes:
+      - ./:/usr/src/app/regps
+    command: sh -c "cd src/regps/ && gunicorn -b 0.0.0.0:8000 app:app --reload"
+    environment:
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  celery:
+    image: web
+    volumes:
+      - ./:/usr/src/app/regps
+    command: sh -c "cd src/regps/ && celery -A app.tasks worker --loglevel=debug"
+    environment:
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    depends_on:
+      - web
+      - redis
+
+  redis:
+    image: redis:7-alpine
