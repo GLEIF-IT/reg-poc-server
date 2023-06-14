@@ -21,11 +21,12 @@ class LoginTask(object):
             print(f"LoginTask.on_post: sending data {data}")
             result = verify(data['aid'], data['said'], data['vlei'])
             print(f"LoginTask.on_post: received data {result}")
-            resp.status = result.status_code
+            resp.status = falcon.code_to_http_status(result.status_code)
             resp.text = result.text
-            resp.content_type = result.content
+            resp.content_type = result.headers['Content-Type']
         except Exception as e:
             print(f"LoginTask.on_post: Exception: {e}")
+            resp.text = f"Exception: {e}"
             resp.status = falcon.HTTP_500
     
 

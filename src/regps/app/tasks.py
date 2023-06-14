@@ -27,17 +27,23 @@ def verify(aid,said,vlei) -> falcon.Response:
 
     purl = "http://localhost:7676/presentations/"
     aurl = "http://localhost:7676/authorizations/"
-    print("putting to {}".format(purl+f"{said}"))
-    pres = requests.put(purl+f"{said}", headers={"Content-Type": "application/json+cesr"}, data=vlei)
-    print("put response {}".format(pres.text))
-    if pres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
-        gres = None
-        while(gres == None or gres.status_code == falcon.http_status_to_code(falcon.HTTP_404)):
-            gres = requests.get(aurl+f"{aid}", headers={"Content-Type": "application/json"})
-            print("polling result {}".format(gres.text))
-            sleep (1)
+    # first check to see if we're already logged in
+    gres = requests.get(aurl+f"{aid}", headers={"Content-Type": "application/json"})
+    if gres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
+        print("already logged in")
         return gres
     else:
-        return pres
+        print("putting to {}".format(purl+f"{said}"))
+        pres = requests.put(purl+f"{said}", headers={"Content-Type": "application/json+cesr"}, data=vlei)
+        print("put response {}".format(pres.text))
+        if pres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
+            gres = None
+            while(gres == None or gres.status_code == falcon.http_status_to_code(falcon.HTTP_404)):
+                gres = requests.get(aurl+f"{aid}", headers={"Content-Type": "application/json"})
+                print("polling result {}".format(gres.text))
+                sleep (1)
+            return gres
+        else:
+            return pres
         
     
