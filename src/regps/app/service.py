@@ -1,8 +1,10 @@
 # import asyncio
 # import falcon.asgi
+import base64
 import falcon
 from falcon import media
 from falcon.http_status import HTTPStatus
+import gunicorn
 import json
 import os
 from swagger_ui import api_doc
@@ -15,9 +17,10 @@ class LoginTask(object):
         print("LoginTask.on_post")
         try:
             raw_json = req.stream.read()
-            result = json.loads(raw_json)
-            print(f"LoginTask.on_post: result is {result}")
-            result = verify(result['aid'], result['said'], result['vlei'])
+            data = json.loads(raw_json)
+            print(f"LoginTask.on_post: sending data {data}")
+            result = verify(data['aid'], data['said'], data['vlei'])
+            print(f"LoginTask.on_post: received data {result}")
             resp.status = result.status_code
             resp.text = result.text
             resp.content_type = result.content
@@ -53,28 +56,32 @@ def getRequiredParam(body, name):
 
 def swagger_ui(app):
     cesr = None
+    # with open('app/data/credential.json', 'r') as file:
     with open('app/data/credential.cesr', 'r') as file:
         file_contents = file.read()
-        print("Loaded cesr cred data {}".format(file_contents))
-    config = {"openapi":"3.0.1",
-              "info":{"title":"Regulator portal service api","description":"Regulator web portal service api","version":"1.0.0"},
-              "servers":[{"url":"http://127.0.0.1:8000","description":"local server"}],
-              "tags":[{"name":"default","description":"default tag"}],
-              "paths":{"/ping":{"get":{"tags":["default"],"summary":"output pong.","responses":{"200":{"description":"OK","content":{"application/text":{"schema":{"type":"object","example":"Pong"}}}}}}},
-                       "/login":{"post":{"tags":["default"],
-                                         "summary":"Given an AID and vLEI, returns information about the login",
-                                         "requestBody":{"required":"true","content":{"application/json":{"schema":{"type":"object","properties":{
-                                             "aid":{"type":"string","example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},
-                                             "said":{"type":"string","example":"EPmiOgVewnJB8Oev8v4roUqIFNn5SBgiV-ukHiLW81ot"},
-                                             "vlei":{"type":"string","example":f"{file_contents}"}
-                                             }}}}},
-                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}}
-                                         }}
-                       },
-              "components":{}}
+        # decoded_data = base64.b64decode(file_contents)
+        # jdata = json.load(file)
+        # print("Loaded json cred data {}".format(jdata))
+        # jutf8 = json.dumps(jdata).encode("utf-8")
+        config = {"openapi":"3.0.1",
+                "info":{"title":"Regulator portal service api","description":"Regulator web portal service api","version":"1.0.0"},
+                "servers":[{"url":"http://127.0.0.1:8000","description":"local server"}],
+                "tags":[{"name":"default","description":"default tag"}],
+                "paths":{"/ping":{"get":{"tags":["default"],"summary":"output pong.","responses":{"200":{"description":"OK","content":{"application/text":{"schema":{"type":"object","example":"Pong"}}}}}}},
+                        "/login":{"post":{"tags":["default"],
+                                            "summary":"Given an AID and vLEI, returns information about the login",
+                                            "requestBody":{"required":"true","content":{"application/json":{"schema":{"type":"object","properties":{
+                                                "aid":{"type":"string","example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},
+                                                "said":{"type":"string","example":"EPmiOgVewnJB8Oev8v4roUqIFNn5SBgiV-ukHiLW81ot"},
+                                                "vlei":{"type":"string","example":f"{file_contents}"}
+                                                }}}}},
+                                            "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}}
+                                            }}
+                        },
+                "components":{}}
 
-    doc = api_doc(app, config=config, url_prefix='/api/doc', title='API doc', editor=True)
-    return doc
+        doc = api_doc(app, config=config, url_prefix='/api/doc', title='API doc', editor=True)
+        return doc
 
 def falcon_app():
     app = falcon.App(middleware=falcon.CORSMiddleware(
@@ -110,10 +117,11 @@ def falcon_app():
 #         'body': b'Hello, world!',
 #     })
     
-def main(first, second):
+def main():
     print("Starting RegPS...")
     app = falcon_app()
     api_doc=swagger_ui(app)
+    
     return app
     
 if __name__ == '__main__':
