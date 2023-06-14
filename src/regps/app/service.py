@@ -72,7 +72,7 @@ def swagger_ui(app):
                                             "summary":"Given an AID and vLEI, returns information about the login",
                                             "requestBody":{"required":"true","content":{"application/json":{"schema":{"type":"object","properties":{
                                                 "aid":{"type":"string","example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},
-                                                "said":{"type":"string","example":"EPmiOgVewnJB8Oev8v4roUqIFNn5SBgiV-ukHiLW81ot"},
+                                                "said":{"type":"string","example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},
                                                 "vlei":{"type":"string","example":f"{file_contents}"}
                                                 }}}}},
                                             "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}}
@@ -121,7 +121,7 @@ def main():
     print("Starting RegPS...")
     app = falcon_app()
     api_doc=swagger_ui(app)
-    
+
     return app
     
 if __name__ == '__main__':
