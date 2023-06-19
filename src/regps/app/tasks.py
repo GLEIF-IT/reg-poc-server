@@ -20,15 +20,20 @@ if CELERY_BACKEND is None:
     
 app = celery.Celery('tasks', broker=CELERY_BROKER, backend=CELERY_BACKEND)
 
+purl = "http://localhost:7676/presentations/"
+aurl = "http://localhost:7676/authorizations/"
+
+@app.task
+def check_login(aid) -> falcon.Response:
+    print("checking login: aid {}".format(aid))
+    gres = requests.get(aurl+f"{aid}", headers={"Content-Type": "application/json"})
+    print("login status: {}".format(gres))
+    return gres
 
 @app.task
 def verify(aid,said,vlei) -> falcon.Response:
-    sleep(2)  # simulate slow computation
-
-    purl = "http://localhost:7676/presentations/"
-    aurl = "http://localhost:7676/authorizations/"
     # first check to see if we're already logged in
-    gres = requests.get(aurl+f"{aid}", headers={"Content-Type": "application/json"})
+    gres = check_login(aid)
     if gres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
         print("already logged in")
         return gres
@@ -39,7 +44,7 @@ def verify(aid,said,vlei) -> falcon.Response:
         if pres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
             gres = None
             while(gres == None or gres.status_code == falcon.http_status_to_code(falcon.HTTP_404)):
-                gres = requests.get(aurl+f"{aid}", headers={"Content-Type": "application/json"})
+                gres = check_login(aid)
                 print("polling result {}".format(gres.text))
                 sleep (1)
             return gres

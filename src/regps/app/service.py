@@ -8,7 +8,7 @@ import gunicorn
 import json
 import os
 from swagger_ui import api_doc
-from app.tasks import verify
+from app.tasks import check_login,verify
 # import uvicorn
 
 class LoginTask(object):
@@ -26,6 +26,22 @@ class LoginTask(object):
             resp.content_type = result.headers['Content-Type']
         except Exception as e:
             print(f"LoginTask.on_post: Exception: {e}")
+            resp.text = f"Exception: {e}"
+            resp.status = falcon.HTTP_500
+            
+    def on_get(self, req, resp, aid):
+        print("LoginTask.on_get")
+        try:
+            # raw_json = req.stream.read()
+            # data = json.loads(raw_json)
+            print(f"LoginTask.on_get: sending aid {aid}")
+            result = check_login(aid)
+            print(f"LoginTask.on_get: received data {result}")
+            resp.status = falcon.code_to_http_status(result.status_code)
+            resp.text = result.text
+            resp.content_type = result.headers['Content-Type']
+        except Exception as e:
+            print(f"LoginTask.on_get: Exception: {e}")
             resp.text = f"Exception: {e}"
             resp.status = falcon.HTTP_500
     
@@ -77,9 +93,13 @@ def swagger_ui(app):
                                                 "vlei":{"type":"string","example":f"{file_contents}"}
                                                 }}}}},
                                             "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}}
+                                            }},
+                        "/checklogin/{aid}":{"get":{"tags":["default"],
+                                            "summary":"Given an AID returns information about the login",
+                                            "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"}],
+                                            "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID logged in"}}}}}}
                                             }}
-                        },
-                "components":{}}
+                        }}
 
         doc = api_doc(app, config=config, url_prefix='/api/doc', title='API doc', editor=True)
         return doc
@@ -100,6 +120,7 @@ def falcon_app():
     ping = PingResource()
     app.add_route('/ping', ping)
     app.add_route('/login', LoginTask())
+    app.add_route("/checklogin/{aid}", LoginTask())
     
     return app
 
