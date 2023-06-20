@@ -54,27 +54,27 @@ def verify(aid,said,vlei) -> falcon.Response:
             return pres
         
 @app.task
-def check_upload(aid, said) -> falcon.Response:
-    print("checking upload: aid {} and said {}".format(aid,said))
-    gres = requests.get(rurl+f"{aid}/{said}", headers={"Content-Type": "application/json"})
+def check_upload(aid, dig) -> falcon.Response:
+    print("checking upload: aid {} and said {}".format(aid,dig))
+    gres = requests.get(rurl+f"{aid}/{dig}", headers={"Content-Type": "application/json"})
     print("upload status: {}".format(gres))
     return gres
 
 @app.task
-def upload(aid,said,report) -> falcon.Response:
-    # first check to see if we're already logged in
-    gres = check_upload(aid,said)
+def upload(aid,dig,report) -> falcon.Response:
+    # first check to see if we've already uploaded
+    gres = check_upload(aid,dig)
     if gres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
-        print("already logged in")
+        print("already uploaded")
         return gres
     else:
-        print("putting to {}".format(purl+f"{said}"))
-        pres = requests.put(rurl+f"{aid}/{said}", headers={"Content-Type": "multipart/form-data"}, data=report)
+        print("putting to {}".format(purl+f"{dig}"))
+        pres = requests.post(rurl+f"{aid}/{dig}", headers={"Content-Type": "multipart/form-data"}, data=report)
         print("put response {}".format(pres.text))
         if pres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
             gres = None
             while(gres == None or gres.status_code == falcon.http_status_to_code(falcon.HTTP_404)):
-                gres = check_upload(aid,said)
+                gres = check_upload(aid,dig)
                 print("polling result {}".format(gres.text))
                 sleep (1)
             return gres
