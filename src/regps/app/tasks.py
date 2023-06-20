@@ -20,9 +20,30 @@ if CELERY_BACKEND is None:
     
 app = celery.Celery('tasks', broker=CELERY_BROKER, backend=CELERY_BACKEND)
 
-aurl = "http://localhost:7676/authorizations/"
-purl = "http://localhost:7676/presentations/"
-rurl = "http://localhost:7676/reports/"
+aurl = "http://host.docker.internal:7676/authorizations/"
+purl = "http://host.docker.internal:7676/presentations/"
+rurl = "http://host.docker.internal:7676/reports/"
+
+VERIFIER_AUTHORIZATIONS = os.environ.get('VERIFIER_AUTHORIZATIONS')
+if VERIFIER_AUTHORIZATIONS is None:
+        print(f"VERIFIER_AUTHORIZATIONS is not set. Using default {aurl}")
+else:
+        print(f"VERIFIER_AUTHORIZATIONS is set. Using {VERIFIER_AUTHORIZATIONS}")
+        aurl = VERIFIER_AUTHORIZATIONS
+        
+VERIFIER_PRESENTATIONS = os.environ.get('VERIFIER_PRESENTATIONS')
+if VERIFIER_PRESENTATIONS is None:
+        print(f"VERIFIER_PRESENTATIONS is not set. Using default {purl}")
+else:
+        print(f"VERIFIER_PRESENTATIONS is set. Using {VERIFIER_PRESENTATIONS}")
+        aurl = VERIFIER_PRESENTATIONS
+
+VERIFIER_REPORTS = os.environ.get('VERIFIER_REPORTS')
+if VERIFIER_REPORTS is None:
+        print(f"VERIFIER_REPORTS is not set. Using default {rurl}")
+else:
+        print(f"VERIFIER_REPORTS is set. Using {VERIFIER_REPORTS}")
+        aurl = VERIFIER_REPORTS
 
 @app.task
 def check_login(aid) -> falcon.Response:
@@ -55,7 +76,7 @@ def verify(aid,said,vlei) -> falcon.Response:
         
 @app.task
 def check_upload(aid, dig) -> falcon.Response:
-    print("checking upload: aid {} and said {}".format(aid,dig))
+    print("checking upload: aid {} and dig {}".format(aid,dig))
     gres = requests.get(rurl+f"{aid}/{dig}", headers={"Content-Type": "application/json"})
     print("upload status: {}".format(gres))
     return gres
@@ -68,9 +89,9 @@ def upload(aid,dig,report) -> falcon.Response:
         print("already uploaded")
         return gres
     else:
-        print("putting to {}".format(purl+f"{dig}"))
+        print("posting to {}".format(purl+f"{dig}"))
         pres = requests.post(rurl+f"{aid}/{dig}", headers={"Content-Type": "multipart/form-data"}, data=report)
-        print("put response {}".format(pres.text))
+        print("post response {}".format(pres.text))
         if pres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
             gres = None
             while(gres == None or gres.status_code == falcon.http_status_to_code(falcon.HTTP_404)):
