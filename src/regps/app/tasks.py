@@ -20,8 +20,9 @@ if CELERY_BACKEND is None:
     
 app = celery.Celery('tasks', broker=CELERY_BROKER, backend=CELERY_BACKEND)
 
-purl = "http://localhost:7676/presentations/"
 aurl = "http://localhost:7676/authorizations/"
+purl = "http://localhost:7676/presentations/"
+rurl = "http://localhost:7676/reports/"
 
 @app.task
 def check_login(aid) -> falcon.Response:
@@ -34,7 +35,8 @@ def check_login(aid) -> falcon.Response:
 def verify(aid,said,vlei) -> falcon.Response:
     # first check to see if we're already logged in
     gres = check_login(aid)
-    if gres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
+    print("Login check {} {}".format(gres.status_code,gres.text))
+    if str(gres.status_code) == str(falcon.http_status_to_code(falcon.HTTP_ACCEPTED)):
         print("already logged in")
         return gres
     else:
@@ -51,4 +53,30 @@ def verify(aid,said,vlei) -> falcon.Response:
         else:
             return pres
         
-    
+@app.task
+def check_upload(aid, said) -> falcon.Response:
+    print("checking upload: aid {} and said {}".format(aid,said))
+    gres = requests.get(rurl+f"{aid}/{said}", headers={"Content-Type": "application/json"})
+    print("upload status: {}".format(gres))
+    return gres
+
+@app.task
+def upload(aid,said,report) -> falcon.Response:
+    # first check to see if we're already logged in
+    gres = check_upload(aid,said)
+    if gres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
+        print("already logged in")
+        return gres
+    else:
+        print("putting to {}".format(purl+f"{said}"))
+        pres = requests.put(rurl+f"{aid}/{said}", headers={"Content-Type": "multipart/form-data"}, data=report)
+        print("put response {}".format(pres.text))
+        if pres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
+            gres = None
+            while(gres == None or gres.status_code == falcon.http_status_to_code(falcon.HTTP_404)):
+                gres = check_upload(aid,said)
+                print("polling result {}".format(gres.text))
+                sleep (1)
+            return gres
+        else:
+            return pres
