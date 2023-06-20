@@ -14,6 +14,9 @@ services:
     environment:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
+      - VERIFIER_AUTHORIZATIONS=http://host.docker.internal:7676/authorizations/
+      - VERIFIER_PRESENTATIONS=http://host.docker.internal:7676/presentations/
+      - VERIFIER_REPORTS=http://host.docker.internal:7676/reports/
     depends_on:
       - redis
 
