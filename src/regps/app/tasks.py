@@ -20,9 +20,9 @@ if CELERY_BACKEND is None:
     
 app = celery.Celery('tasks', broker=CELERY_BROKER, backend=CELERY_BACKEND)
 
-aurl = "http://host.docker.internal:7676/authorizations/"
-purl = "http://host.docker.internal:7676/presentations/"
-rurl = "http://host.docker.internal:7676/reports/"
+aurl = "http://localhost:7676/authorizations/"
+purl = "http://localhost:7676/presentations/"
+rurl = "http://localhost:7676/reports/"
 
 VERIFIER_AUTHORIZATIONS = os.environ.get('VERIFIER_AUTHORIZATIONS')
 if VERIFIER_AUTHORIZATIONS is None:
@@ -36,14 +36,14 @@ if VERIFIER_PRESENTATIONS is None:
         print(f"VERIFIER_PRESENTATIONS is not set. Using default {purl}")
 else:
         print(f"VERIFIER_PRESENTATIONS is set. Using {VERIFIER_PRESENTATIONS}")
-        aurl = VERIFIER_PRESENTATIONS
+        purl = VERIFIER_PRESENTATIONS
 
 VERIFIER_REPORTS = os.environ.get('VERIFIER_REPORTS')
 if VERIFIER_REPORTS is None:
         print(f"VERIFIER_REPORTS is not set. Using default {rurl}")
 else:
         print(f"VERIFIER_REPORTS is set. Using {VERIFIER_REPORTS}")
-        aurl = VERIFIER_REPORTS
+        rurl = VERIFIER_REPORTS
 
 @app.task
 def check_login(aid) -> falcon.Response:
@@ -57,7 +57,7 @@ def verify(aid,said,vlei) -> falcon.Response:
     # first check to see if we're already logged in
     gres = check_login(aid)
     print("Login check {} {}".format(gres.status_code,gres.text))
-    if str(gres.status_code) == str(falcon.http_status_to_code(falcon.HTTP_ACCEPTED)):
+    if str(gres.status_code) == str(falcon.http_status_to_code(falcon.HTTP_OK)):
         print("already logged in")
         return gres
     else:
