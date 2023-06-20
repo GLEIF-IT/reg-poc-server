@@ -32,8 +32,6 @@ class LoginTask(object):
     def on_get(self, req, resp, aid):
         print("LoginTask.on_get")
         try:
-            # raw_json = req.stream.read()
-            # data = json.loads(raw_json)
             print(f"LoginTask.on_get: sending aid {aid}")
             result = check_login(aid)
             print(f"LoginTask.on_get: received data {result}")
@@ -47,13 +45,13 @@ class LoginTask(object):
             
 class UploadTask(object):
     
-    def on_post(self, req, resp):
-        print("UploadTask.on_post")
+    def on_post(self, req, resp, aid, dig):
+        print("UploadTask.on_post {}".format(req))
         try:
-            raw_json = req.stream.read()
-            data = json.loads(raw_json)
-            print(f"UploadTask.on_post: sending data {data}")
-            result = upload(data['aid'], data['said'], data['vlei'])
+            raw = req.bounded_stream.read()
+            # data = json.loads(raw_json)
+            print(f"UploadTask.on_post: request for {aid} {dig} {raw}")
+            result = upload(aid, dig, raw)
             print(f"UploadTask.on_post: received data {result}")
             resp.status = falcon.code_to_http_status(result.status_code)
             resp.text = result.text
@@ -63,13 +61,13 @@ class UploadTask(object):
             resp.text = f"Exception: {e}"
             resp.status = falcon.HTTP_500
             
-    def on_get(self, req, resp, aid, said):
+    def on_get(self, req, resp, aid, dig):
         print("UploadTask.on_get")
         try:
             # raw_json = req.stream.read()
             # data = json.loads(raw_json)
-            print(f"UploadTask.on_get: sending aid {aid} for said {said}")
-            result = check_upload(aid, said)
+            print(f"UploadTask.on_get: sending aid {aid} for dig {dig}")
+            result = check_upload(aid, dig)
             print(f"UploadTask.on_get: received data {result}")
             resp.status = falcon.code_to_http_status(result.status_code)
             resp.text = result.text
@@ -132,19 +130,19 @@ def swagger_ui(app):
                                         "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"}],
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID logged in"}}}}}}
                                         }},
-                    "/upload/{aid}/{said}":{"post":{"tags":["default"],
+                    "/upload/{aid}/{dig}":{"post":{"tags":["default"],
                                         "summary":"Given an report, returns information about the upload",
+                                        "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
+                                                      {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The digest of the upload"}],
                                         "requestBody":{"required":"true","content":{"multipart/form-data":{"schema":{"type":"object","properties":{
-                                            "aid":{"type":"string","example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},
-                                            "said":{"type":"string","example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},
                                             "upload":{"type":"string","format":"binary","example":f"{report_zip}"}
                                             }}}}},
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}}
                                         }},
-                    "/checkupload/{aid}/{said}":{"get":{"tags":["default"],
+                    "/checkupload/{aid}/{dig}":{"get":{"tags":["default"],
                                         "summary":"Given an AID returns information about the upload status",
                                         "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
-                                                      {"in":"path","name":"said","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The SAID of the upload"}],
+                                                      {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The digest of the upload"}],
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID logged in"}}}}}}
                                         }}
                     }}
@@ -169,8 +167,8 @@ def falcon_app():
     app.add_route('/ping', ping)
     app.add_route('/login', LoginTask())
     app.add_route("/checklogin/{aid}", LoginTask())
-    app.add_route('/upload', UploadTask())
-    app.add_route("/checkupload/{aid}", UploadTask())
+    app.add_route('/upload/{aid}/{dig}', UploadTask())
+    app.add_route("/checkupload/{aid}/{dig}", UploadTask())
     
     return app
 
