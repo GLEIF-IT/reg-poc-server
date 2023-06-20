@@ -10,7 +10,7 @@ services:
       - 8000:8000
     volumes:
       - ./:/usr/src/app/regps
-    command: sh -c "cd src/regps/ && gunicorn -b 0.0.0.0:8000 app:app --reload"
+    command: sh -c "cd src/regps/ && gunicorn -b 0.0.0.0:8000 app:app"
     environment:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0

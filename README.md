@@ -18,9 +18,6 @@ You need to run a local vLEI service, see https://github.com/GLEIF-IT/reg-poc-ve
 To start this web service:
 ```docker-compose up -d --build```
 
-OR for rapid development:
-```cd src/regps;gunicorn -b 0.0.0.0:8000 app:app --reload```
-
 To tear this web service:
 ```docker-compose down```
 
