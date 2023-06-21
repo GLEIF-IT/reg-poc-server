@@ -138,26 +138,26 @@ def swagger_ui(app):
                                             "upload":{"type":"string","format":"binary","example":f"{report_zip}"}
                                             }}}}},
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
-                                                                                                                                            "submitter": "null",
-                                                                                                                                            "filename": "null",
-                                                                                                                                            "status": "failed",
-                                                                                                                                            "contentType": "multipart/form-data",
-                                                                                                                                            "size": 7244,
-                                                                                                                                            "message": "No manifest in file, invalid signed report package"
-                                                                                                                                            }}}}}}
+                                                                "submitter": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
+                                                                "filename": "DUMMYLEI123456789012.IND_FR_IF010200_IFTM_2022-12-31_20220222134211000.zip",
+                                                                "status": "failed",
+                                                                "contentType": "application/zip",
+                                                                "size": 3390,
+                                                                "message": "No signatures found in manifest file"
+                                                                }}}}}},
                                         }},
                     "/checkupload/{aid}/{dig}":{"get":{"tags":["default"],
                                         "summary":"Given an AID returns information about the upload status",
                                         "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
                                                       {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The digest of the upload"}],
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
-                                                                                                                                            "submitter": "null",
-                                                                                                                                            "filename": "null",
-                                                                                                                                            "status": "failed",
-                                                                                                                                            "contentType": "multipart/form-data",
-                                                                                                                                            "size": 7244,
-                                                                                                                                            "message": "No manifest in file, invalid signed report package"
-                                                                                                                                            }}}}}},
+                                                                "submitter": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
+                                                                "filename": "DUMMYLEI123456789012.IND_FR_IF010200_IFTM_2022-12-31_20220222134211000.zip",
+                                                                "status": "failed",
+                                                                "contentType": "application/zip",
+                                                                "size": 3390,
+                                                                "message": "No signatures found in manifest file"
+                                        }}}}}},
                                         }}
                     }}
 
