@@ -50,8 +50,8 @@ class UploadTask(object):
         try:
             raw = req.bounded_stream.read()
             # data = json.loads(raw_json)
-            print(f"UploadTask.on_post: request for {aid} {dig} {raw}")
-            result = upload(aid, dig, raw)
+            print(f"UploadTask.on_post: request for {aid} {dig} {raw} {req.content_type}")
+            result = upload(aid, dig, req.content_type, raw)
             print(f"UploadTask.on_post: received data {result}")
             resp.status = falcon.code_to_http_status(result.status_code)
             resp.text = result.text
@@ -138,22 +138,26 @@ def swagger_ui(app):
                                             "upload":{"type":"string","format":"binary","example":f"{report_zip}"}
                                             }}}}},
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
-                                                                                                                                                    "status": "accepted",
-                                                                                                                                                    "contentType": "multipart/form-data",
-                                                                                                                                                    "size": 7244,
-                                                                                                                                                    "message": ""
-                                                                                                                                                    }}}}}}
+                                                                                                                                            "submitter": "null",
+                                                                                                                                            "filename": "null",
+                                                                                                                                            "status": "failed",
+                                                                                                                                            "contentType": "multipart/form-data",
+                                                                                                                                            "size": 7244,
+                                                                                                                                            "message": "No manifest in file, invalid signed report package"
+                                                                                                                                            }}}}}}
                                         }},
                     "/checkupload/{aid}/{dig}":{"get":{"tags":["default"],
                                         "summary":"Given an AID returns information about the upload status",
                                         "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
                                                       {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The digest of the upload"}],
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
-                                                                                                                                                    "status": "accepted",
-                                                                                                                                                    "contentType": "multipart/form-data",
-                                                                                                                                                    "size": 7244,
-                                                                                                                                                    "message": ""
-                                                                                                                                                    }}}}}},
+                                                                                                                                            "submitter": "null",
+                                                                                                                                            "filename": "null",
+                                                                                                                                            "status": "failed",
+                                                                                                                                            "contentType": "multipart/form-data",
+                                                                                                                                            "size": 7244,
+                                                                                                                                            "message": "No manifest in file, invalid signed report package"
+                                                                                                                                            }}}}}},
                                         }}
                     }}
 
