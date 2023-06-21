@@ -82,7 +82,7 @@ def check_upload(aid, dig) -> falcon.Response:
     return gres
 
 @app.task
-def upload(aid,dig,report) -> falcon.Response:
+def upload(aid,dig,contype,report) -> falcon.Response:
     # first check to see if we've already uploaded
     gres = check_upload(aid,dig)
     if gres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
@@ -90,7 +90,7 @@ def upload(aid,dig,report) -> falcon.Response:
         return gres
     else:
         print("posting to {}".format(purl+f"{dig}"))
-        pres = requests.post(rurl+f"{aid}/{dig}", headers={"Content-Type": "multipart/form-data"}, data=report)
+        pres = requests.post(rurl+f"{aid}/{dig}", headers={"Content-Type": contype}, data=report)
         print("post response {}".format(pres.text))
         if pres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
             gres = None
