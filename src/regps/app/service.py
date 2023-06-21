@@ -137,13 +137,23 @@ def swagger_ui(app):
                                         "requestBody":{"required":"true","content":{"multipart/form-data":{"schema":{"type":"object","properties":{
                                             "upload":{"type":"string","format":"binary","example":f"{report_zip}"}
                                             }}}}},
-                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}}
+                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
+                                                                                                                                                    "status": "accepted",
+                                                                                                                                                    "contentType": "multipart/form-data",
+                                                                                                                                                    "size": 7244,
+                                                                                                                                                    "message": ""
+                                                                                                                                                    }}}}}}
                                         }},
                     "/checkupload/{aid}/{dig}":{"get":{"tags":["default"],
                                         "summary":"Given an AID returns information about the upload status",
                                         "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
                                                       {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The digest of the upload"}],
-                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID logged in"}}}}}}
+                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
+                                                                                                                                                    "status": "accepted",
+                                                                                                                                                    "contentType": "multipart/form-data",
+                                                                                                                                                    "size": 7244,
+                                                                                                                                                    "message": ""
+                                                                                                                                                    }}}}}},
                                         }}
                     }}
 
