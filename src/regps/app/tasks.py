@@ -6,8 +6,8 @@ import os
 import requests
 from time import sleep
 
-dbrok = "redis://redis:6379/0"
-dback = "redis://redis:6379/0"
+dbrok = "redis://127.0.0.1:6379/0"
+dback = "redis://127.0.0.1:6379/0"
 
 CELERY_BROKER = os.environ.get('CELERY_BROKER')
 if CELERY_BROKER is None:
@@ -55,8 +55,9 @@ def check_login(aid) -> falcon.Response:
 @app.task
 def verify(aid,said,vlei) -> falcon.Response:
     # first check to see if we're already logged in
+    print("Login verification started {} {}....".format(aid,said,vlei[:50]))
     gres = check_login(aid)
-    print("Login check {} {}".format(gres.status_code,gres.text))
+    print("Login check {} {}....".format(gres.status_code,gres.text[:50]))
     if str(gres.status_code) == str(falcon.http_status_to_code(falcon.HTTP_OK)):
         print("already logged in")
         return gres
