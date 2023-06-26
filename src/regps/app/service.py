@@ -1,15 +1,12 @@
-# import asyncio
-# import falcon.asgi
-import base64
 import falcon
 from falcon import media
 from falcon.http_status import HTTPStatus
-import gunicorn
 import json
-import os
+import time
 from swagger_ui import api_doc
 from app.tasks import check_login, check_upload, upload, verify
-# import uvicorn
+
+uploadStatus = {}
 
 class LoginTask(object):
 
@@ -18,9 +15,21 @@ class LoginTask(object):
         try:
             raw_json = req.stream.read()
             data = json.loads(raw_json)
-            print(f"LoginTask.on_post: sending data {data}")
+            print(f"LoginTask.on_post: sending data {str(data)[:50]}...")
             result = verify(data['aid'], data['said'], data['vlei'])
-            print(f"LoginTask.on_post: received data {result}")
+            # result = verify.apply_async(args=(data['aid'], data['said'], data['vlei']))
+            # print(f"LoginTask.on_post: Will poll with for result {result}")
+            # while not result.ready():
+            #     time.sleep(1)
+            #     print(f"LoginTask.on_post: polling for result {result.id}")
+            #     result = AsyncResult(result.id)  # Refresh the result object
+            # result = result.get()
+            print(f"LoginTask.on_post: received data {result.status_code}")
+            if(result.status_code < 400):
+                print("Logged in user, checking status...")
+                if(data['aid'] not in uploadStatus):
+                    print("Added empty status for {}".format(data['aid']))
+                    uploadStatus[data['aid']] = []
             resp.status = falcon.code_to_http_status(result.status_code)
             resp.text = result.text
             resp.content_type = result.headers['Content-Type']
@@ -56,6 +65,14 @@ class UploadTask(object):
             resp.status = falcon.code_to_http_status(result.status_code)
             resp.text = result.text
             resp.content_type = result.headers['Content-Type']
+            # add to status dict
+            if(aid not in uploadStatus):
+                print(f"UploadTask.on_post: Exception: {e}")
+                resp.text = f"AID not logged in: {aid}"
+                resp.status = falcon.HTTP_401    
+            else:    
+                print(f"UploadTask.on_post added uploadStatus for {aid}: {dig}")
+                uploadStatus[f"{aid}"].append(resp.text)
         except Exception as e:
             print(f"UploadTask.on_post: Exception: {e}")
             resp.text = f"Exception: {e}"
@@ -74,6 +91,30 @@ class UploadTask(object):
             resp.content_type = result.headers['Content-Type']
         except Exception as e:
             print(f"UploadTask.on_get: Exception: {e}")
+            resp.text = f"Exception: {e}"
+            resp.status = falcon.HTTP_500
+
+class StatusTask(object):            
+    def on_get(self, req, resp, aid):
+        print(f"StatusTask.on_get request ")
+        try:
+            # raw_json = req.stream.read()
+            # data = json.loads(raw_json)
+            print(f"StatusTask.on_get: aid {aid}")
+            if(aid not in uploadStatus):
+                print(f"UploadTask.on_post: Cannot find status for {aid}")
+                resp.text = f"AID not logged in: {aid}"
+                resp.status = falcon.HTTP_401
+            else:
+                result = uploadStatus[f"{aid}"]
+                print(f"StatusTask.on_get: received data {result}")
+                resp.status = falcon.HTTP_200
+                resp.text = json.dumps({f"{aid}":result})
+                if not result:
+                    # no headers
+                    print(f"Empty upload status list for aid {aid}")
+        except Exception as e:
+            print(f"StatusTask.on_get: Exception: {e}")
             resp.text = f"Exception: {e}"
             resp.status = falcon.HTTP_500
 
@@ -131,7 +172,7 @@ def swagger_ui(app):
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID logged in"}}}}}}
                                         }},
                     "/upload/{aid}/{dig}":{"post":{"tags":["default"],
-                                        "summary":"Given an report, returns information about the upload",
+                                        "summary":"Given an AID and DIG, returns information about the upload",
                                         "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
                                                       {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The digest of the upload"}],
                                         "requestBody":{"required":"true","content":{"multipart/form-data":{"schema":{"type":"object","properties":{
@@ -139,7 +180,7 @@ def swagger_ui(app):
                                             }}}}},
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
                                                                 "submitter": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
-                                                                "filename": "DUMMYLEI123456789012.IND_FR_IF010200_IFTM_2022-12-31_20220222134211000.zip",
+                                                                "filename": "test_report.zip",
                                                                 "status": "failed",
                                                                 "contentType": "application/zip",
                                                                 "size": 3390,
@@ -147,7 +188,7 @@ def swagger_ui(app):
                                                                 }}}}}},
                                         }},
                     "/checkupload/{aid}/{dig}":{"get":{"tags":["default"],
-                                        "summary":"Given an AID returns information about the upload status",
+                                        "summary":"Given an AID and DIG returns information about the upload status",
                                         "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
                                                       {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The digest of the upload"}],
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
@@ -158,6 +199,18 @@ def swagger_ui(app):
                                                                 "size": 3390,
                                                                 "message": "No signatures found in manifest file"
                                         }}}}}},
+                                        }},
+                    "/status/{aid}":{"get":{"tags":["default"],
+                                        "summary":"Given an AID returns information about the upload status",
+                                        "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"}],
+                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":[{
+                                                                "submitter": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
+                                                                "filename": "DUMMYLEI123456789012.IND_FR_IF010200_IFTM_2022-12-31_20220222134211000.zip",
+                                                                "status": "failed",
+                                                                "contentType": "application/zip",
+                                                                "size": 3390,
+                                                                "message": "No signatures found in manifest file"
+                                        }]}}}}},
                                         }}
                     }}
 
@@ -183,6 +236,7 @@ def falcon_app():
     app.add_route("/checklogin/{aid}", LoginTask())
     app.add_route('/upload/{aid}/{dig}', UploadTask())
     app.add_route("/checkupload/{aid}/{dig}", UploadTask())
+    app.add_route("/status/{aid}", StatusTask())
     
     return app
 
