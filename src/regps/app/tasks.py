@@ -90,7 +90,7 @@ def upload(aid,dig,contype,report) -> falcon.Response:
         print("already uploaded")
         return gres
     else:
-        print("posting to {}".format(purl+f"{dig}"))
+        print("posting to {}".format(rurl+f"{dig}"))
         pres = requests.post(rurl+f"{aid}/{dig}", headers={"Content-Type": contype}, data=report)
         print("post response {}".format(pres.text))
         if pres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
