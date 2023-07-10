@@ -1,10 +1,11 @@
+from app.tasks import check_login, check_upload, upload, verify
+from celery.result import AsyncResult
 import falcon
 from falcon import media
 from falcon.http_status import HTTPStatus
 import json
-import time
 from swagger_ui import api_doc
-from app.tasks import check_login, check_upload, upload, verify
+import time
 
 uploadStatus = {}
 
@@ -16,23 +17,23 @@ class LoginTask(object):
             raw_json = req.stream.read()
             data = json.loads(raw_json)
             print(f"LoginTask.on_post: sending data {str(data)[:50]}...")
-            result = verify(data['aid'], data['said'], data['vlei'])
-            # result = verify.apply_async(args=(data['aid'], data['said'], data['vlei']))
-            # print(f"LoginTask.on_post: Will poll with for result {result}")
-            # while not result.ready():
-            #     time.sleep(1)
-            #     print(f"LoginTask.on_post: polling for result {result.id}")
-            #     result = AsyncResult(result.id)  # Refresh the result object
-            # result = result.get()
-            print(f"LoginTask.on_post: received data {result.status_code}")
-            if(result.status_code < 400):
+            # result = verify(data['aid'], data['said'], data['vlei'])
+            result = verify.apply_async(args=(data['aid'], data['said'], data['vlei']))
+            print(f"LoginTask.on_post: Will poll for result {result}")
+            while not result.ready():
+                time.sleep(1)
+                print(f"LoginTask.on_post: polling for result {result.id}")
+                result = AsyncResult(result.id)  # Refresh the result object
+            result = result.get()
+            print(f"LoginTask.on_post: received data {result['status_code']}")
+            if(result["status_code"] < 400):
                 print("Logged in user, checking status...")
                 if(data['aid'] not in uploadStatus):
                     print("Added empty status for {}".format(data['aid']))
                     uploadStatus[data['aid']] = []
-            resp.status = falcon.code_to_http_status(result.status_code)
-            resp.text = result.text
-            resp.content_type = result.headers['Content-Type']
+            resp.status = falcon.code_to_http_status(result["status_code"])
+            resp.text = result["text"]
+            resp.content_type = result["headers"]['Content-Type']
         except Exception as e:
             print(f"LoginTask.on_post: Exception: {e}")
             resp.text = f"Exception: {e}"
@@ -44,9 +45,9 @@ class LoginTask(object):
             print(f"LoginTask.on_get: sending aid {aid}")
             result = check_login(aid)
             print(f"LoginTask.on_get: received data {result}")
-            resp.status = falcon.code_to_http_status(result.status_code)
-            resp.text = result.text
-            resp.content_type = result.headers['Content-Type']
+            resp.status = falcon.code_to_http_status(result["status_code"])
+            resp.text = result["text"]
+            resp.content_type = result["headers"]['Content-Type']
         except Exception as e:
             print(f"LoginTask.on_get: Exception: {e}")
             resp.text = f"Exception: {e}"
@@ -58,16 +59,21 @@ class UploadTask(object):
         print("UploadTask.on_post {}".format(req))
         try:
             raw = req.bounded_stream.read()
-            # data = json.loads(raw_json)
+            # data = json.loads(raw)
             print(f"UploadTask.on_post: request for {aid} {dig} {raw} {req.content_type}")
-            result = upload(aid, dig, req.content_type, raw)
+            result = upload.apply_async(args=(aid, dig, req.content_type, raw))
             print(f"UploadTask.on_post: received data {result}")
-            resp.status = falcon.code_to_http_status(result.status_code)
-            resp.text = result.text
-            resp.content_type = result.headers['Content-Type']
+            while not result.ready():
+                time.sleep(1)
+                print(f"LoginTask.on_post: polling for result {result.id}")
+                result = AsyncResult(result.id)  # Refresh the result object
+            result = result.get()
+            resp.status = falcon.code_to_http_status(result["status_code"])
+            resp.text = result["text"]
+            resp.content_type = result["headers"]['Content-Type']
             # add to status dict
             if(aid not in uploadStatus):
-                print(f"UploadTask.on_post: Exception: {e}")
+                print(f"UploadTask.on_post: Error aid not logged in {aid}")
                 resp.text = f"AID not logged in: {aid}"
                 resp.status = falcon.HTTP_401    
             else:    
@@ -86,9 +92,9 @@ class UploadTask(object):
             print(f"UploadTask.on_get: sending aid {aid} for dig {dig}")
             result = check_upload(aid, dig)
             print(f"UploadTask.on_get: received data {result}")
-            resp.status = falcon.code_to_http_status(result.status_code)
-            resp.text = result.text
-            resp.content_type = result.headers['Content-Type']
+            resp.status = falcon.code_to_http_status(result["status_code"])
+            resp.text = result["text"]
+            resp.content_type = result["headers"]['Content-Type']
         except Exception as e:
             print(f"UploadTask.on_get: Exception: {e}")
             resp.text = f"Exception: {e}"
