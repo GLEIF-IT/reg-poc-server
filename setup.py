@@ -79,7 +79,7 @@ setup(
         'requests>=2.31.0',
         'swagger-ui-py>=22.7.13',
         'gunicorn>=20.1.0',
-        'flower'=4.4.7,
+        'flower=1.2.0',
     ],
     extras_require={
         # eg:
