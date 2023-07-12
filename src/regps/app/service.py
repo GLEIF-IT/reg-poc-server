@@ -4,10 +4,26 @@ import falcon
 from falcon import media
 from falcon.http_status import HTTPStatus
 import json
+# from keria.app.agenting import Agency
+# from keria.core.authing import Authenticater
+import os
 from swagger_ui import api_doc
 import time
 
 uploadStatus = {}
+
+# agency = Agency(name="wsagency", base="", bran="", configFile="server-config.json", configDir="/Users/meenyleeny/VSCode/reg-poc-server/scripts")
+# auth = Authenticater(agency=agency)
+
+class HandleSigs(object):
+    def process_request(self, req, resp):
+        print(f"HandleSigs.process_request {req}")
+        # res = auth.verify(req)
+        # print(f"HandleSigs.process_request is sig valid: {res}")
+        # if res == False:
+        #     raise HTTPStatus(falcon.HTTP_401, text='Signature headers are not valid\n')
+
+verSig = HandleSigs()
 
 class LoginTask(object):
 
@@ -54,9 +70,10 @@ class LoginTask(object):
             resp.status = falcon.HTTP_500
             
 class UploadTask(object):
-    
+        
     def on_post(self, req, resp, aid, dig):
         print("UploadTask.on_post {}".format(req))
+        verSig.process_request(req, resp)
         try:
             raw = req.bounded_stream.read()
             # data = json.loads(raw)
@@ -86,6 +103,7 @@ class UploadTask(object):
             
     def on_get(self, req, resp, aid, dig):
         print("UploadTask.on_get")
+        verSig.process_request(req, resp)
         try:
             # raw_json = req.stream.read()
             # data = json.loads(raw_json)
@@ -100,9 +118,11 @@ class UploadTask(object):
             resp.text = f"Exception: {e}"
             resp.status = falcon.HTTP_500
 
-class StatusTask(object):            
+class StatusTask(object):   
+             
     def on_get(self, req, resp, aid):
         print(f"StatusTask.on_get request ")
+        verSig.process_request(req, resp)
         try:
             # raw_json = req.stream.read()
             # data = json.loads(raw_json)
@@ -131,7 +151,7 @@ class HandleCORS(object):
         resp.set_header('Access-Control-Allow-Headers', '*')
         resp.set_header('Access-Control-Max-Age', 1728000)  # 20 days
         if req.method == 'OPTIONS':
-            raise HTTPStatus(falcon.HTTP_200, body='\n')
+            raise HTTPStatus(falcon.HTTP_200, text='\n')
 
 class PingResource:
    def on_get(self, req, resp):
@@ -208,7 +228,20 @@ def swagger_ui(app):
                                         }},
                     "/status/{aid}":{"get":{"tags":["default"],
                                         "summary":"Given an AID returns information about the upload status",
-                                        "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"}],
+                                        "parameters":[
+                                            {"in":"header","name":"Signature","required":"true",
+                                             "schema":{"type":"string","example":"indexed=\"?0\";signify=\"0BDQ4PhhM6N6QuphJqVLHYnKDgyCxgFa6wMDVhCH2jRYpZcB8zozvpUL74GPVbxSa6A6LD5fYtFwsQ_dce9X90wA\""},
+                                             "description":"The signature of the data"},
+                                            {"in":"header","name":"Signature-Input","required":"true",
+                                             "schema":{"type":"string","example":"signify=(\"signify-resource\" \"@method\" \"@path\" \"signify-timestamp\");created=1689021741;keyid=\"EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei\";alg=\"ed25519\""},
+                                             "description":"The signature of the data"},
+                                            {"in":"header","name":"Signify-Resource","required":"true",
+                                             "schema":{"type":"string","example":"EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei"},
+                                             "description":"The signature of the data"},
+                                            {"in":"path","name":"aid","required":"true",
+                                             "schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},
+                                             "description":"The AID"}
+                                        ],
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":[{
                                                                 "submitter": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
                                                                 "filename": "DUMMYLEI123456789012.IND_FR_IF010200_IFTM_2022-12-31_20220222134211000.zip",
@@ -223,21 +256,20 @@ def swagger_ui(app):
     doc = api_doc(app, config=config, url_prefix='/api/doc', title='API doc', editor=True)
     return doc
 
-def falcon_app():
+def falcon_app():    
     app = falcon.App(middleware=falcon.CORSMiddleware(
-        allow_origins='*', allow_credentials='*',
-        expose_headers=['content-type', 'signature', 'signature-input'])
-        )
-# if os.getenv("KERI_AGENT_CORS", "false").lower() in ("true", "1"):
-    app.add_middleware(middleware=HandleCORS())
-    print("CORS  enabled")
-    # app.add_middleware(authing.SignatureValidationComponent(agency=agency, authn=authn, allowed=["/agent"]))
+    allow_origins='*', allow_credentials='*',
+    expose_headers=['cesr-attachment', 'cesr-date', 'content-type', 'signature', 'signature-input',
+                    'signify-resource', 'signify-timestamp']))
+    if os.getenv("ENABLE_CORS", "false").lower() in ("true", "1"):
+        print("CORS  enabled")
+        app.add_middleware(middleware=HandleCORS())
+    # app.add_middleware(middleware=HandleSigs())
     app.req_options.media_handlers.update(media.Handlers())
     app.resp_options.media_handlers.update(media.Handlers())
 
     # app = falcon.asgi.App()
-    ping = PingResource()
-    app.add_route('/ping', ping)
+    app.add_route('/ping', PingResource())
     app.add_route('/login', LoginTask())
     app.add_route("/checklogin/{aid}", LoginTask())
     app.add_route('/upload/{aid}/{dig}', UploadTask())

@@ -1,6 +1,10 @@
 # base image
 FROM python:3.11-alpine
 
+RUN apk update
+RUN apk add bash
+RUN apk add git
+
 # set working directory
 WORKDIR /usr/src/app/regps
 

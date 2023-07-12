@@ -14,22 +14,36 @@ services:
     environment:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
+      - ENABLE_CORS=true
       - VERIFIER_AUTHORIZATIONS=http://host.docker.internal:7676/authorizations/
       - VERIFIER_PRESENTATIONS=http://host.docker.internal:7676/presentations/
       - VERIFIER_REPORTS=http://host.docker.internal:7676/reports/
     depends_on:
       - redis
+      - celery
+
+  # monitor:
+  #   image: web
+  #   ports:
+  #     - 5555:5555
+  #   command: sh -c "cd src/regps/ && celery -A app.tasks flower --port=5555 --broker=redis://redis:6379/0"
+  #   environment:
+  #     - CELERY_BROKER=redis://redis:6379/0
+  #     - CELERY_BACKEND=redis://redis:6379/0
+  #   depends_on:
+  #     - redis
+  #     - celery
+  #     - web
 
   celery:
     image: web
     volumes:
       - ./:/usr/src/app/regps
-    command: sh -c "cd src/regps/ && celery -A app.tasks worker --loglevel=debug"
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && cd src/regps/ && celery -A app.tasks worker --loglevel=debug"
     environment:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
     depends_on:
-      - web
       - redis
 
   redis:
