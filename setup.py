@@ -76,7 +76,6 @@ setup(
         'falcon>=3.1.0',
         'gunicorn>=20.1.0',
         'http_sfv>=0.9.8',
-        'keria @ git+https://git@github.com/WebOfTrust/keria.git',
         'redis>=4.5.5',
         'requests>=2.31.0',
         'swagger-ui-py>=22.7.13'

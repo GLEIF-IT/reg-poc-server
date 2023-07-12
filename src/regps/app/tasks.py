@@ -68,7 +68,7 @@ def verify(aid,said,vlei):
         print("put response {}".format(pres.text))
         if pres.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
             gres = None
-            while(gres == None or gres.status_code == falcon.http_status_to_code(falcon.HTTP_404)):
+            while(gres == None or gres["status_code"] == falcon.http_status_to_code(falcon.HTTP_404)):
                 gres = check_login(aid)
                 print("polling result {}".format(gres["text"]))
                 sleep (1)
