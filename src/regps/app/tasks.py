@@ -47,7 +47,7 @@ else:
 
 @app.task
 def check_login(aid: str) -> dict:
-    return serialzie(_login(aid))
+    return serialize(_login(aid))
 
 def _login(aid: str) -> falcon.Response:
     print("checking login: aid", aid)
@@ -66,7 +66,7 @@ def verify(aid: str, said: str, vlei: str) -> dict:
 
     if str(login_response.status_code) == str(falcon.http_status_to_code(falcon.HTTP_OK)):
         print("already logged in")
-        return serialzie(login_response)
+        return serialize(login_response)
     else:
         print("putting to", presentations_url, said)
         presentation_response = requests.put(f"{presentations_url}{said}", headers={"Content-Type": "application/json+cesr"}, data=vlei)
@@ -78,13 +78,13 @@ def verify(aid: str, said: str, vlei: str) -> dict:
                 login_response = _login(aid)
                 print("polling result", login_response)
                 sleep (1)
-            return serialzie(login_response)
+            return serialize(login_response)
         else:
-            return serialzie(presentation_response)
+            return serialize(presentation_response)
         
 @app.task
 def check_upload(aid: str, dig: str) -> dict:
-    return serialzie(_upload(aid, dig))
+    return serialize(_upload(aid, dig))
 
 def _upload(aid: str, dig: str) -> falcon.Response:
     print("checking upload: aid {aid} and dig {dir}")
@@ -99,7 +99,7 @@ def upload(aid: str, dig: str, contype: str, report) -> dict:
     upload_response = _upload(aid, dig)
     if upload_response.status_code == falcon.http_status_to_code(falcon.HTTP_ACCEPTED):
         print("already uploaded")
-        return serialzie(upload_response)
+        return serialize(upload_response)
     else:
         print("posting to", reports_url, dig)
         presentation_response = requests.post(f"{reports_url}{aid}/{dig}", headers={"Content-Type": contype}, data=report)
@@ -111,9 +111,9 @@ def upload(aid: str, dig: str, contype: str, report) -> dict:
                 upload_response = _upload(aid,dig)
                 print("polling result", upload_response.text)
                 sleep (1)
-            return serialzie(upload_response)
+            return serialize(upload_response)
         else:
-            return serialzie(presentation_response)
+            return serialize(presentation_response)
         
-def serialzie(response: falcon.Response) -> dict:
+def serialize(response: falcon.Response) -> dict:
     return {"status_code": response.status_code, "text": response.text, "headers":{"Content-Type": response.headers['Content-Type']}}
