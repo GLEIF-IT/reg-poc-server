@@ -1,34 +1,44 @@
-# regulation-portal-service
-A service to manage regulator portal requests/responses that requires authentication, document submission, validation, and more 
+# reg-poc-server
+A service to manage regulator portal requests/responses that require authentication, document submission and validation. 
 
-## Desgin
-### Web app support
-The web app (UI front-end) will be using Signify/KERIA for selecting identifiers and credentials:
+## Architecture
 
-### This service
-The regulation service will provide the ability to:
-* Login using an AID, SAID, and vLEI
+### Server (this service)
+Provides the ability to:
+* Log in using a vLEI ECR
 * Upload signed files
 * Check the status of an upload
 
-## Development
-You need to run a local vLEI service, see https://github.com/GLEIF-IT/reg-poc-verifier:
-```verifier server start --config-dir scripts --config-file verifier-config.json```
+In two seperate terminals run:
 
-To start this web service:
-```docker-compose up -d --build```
+```
+cd src/regps; celery -A app.tasks worker -l DEBUG
+```
 
-To tear this web service:
-```docker-compose down```
+and
 
-You should see:
-```[+] Running 4/4
- ✔ Network reg-poc-server_default     Created                                                                                                                                                                                                                                                                 0.1s 
- ✔ Container reg-poc-server-redis-1   Started                                                                                                                                                                                                                                                                 0.6s 
- ✔ Container web                      Started                                                                                                                                                                                                                                                                 0.8s 
- ✔ Container reg-poc-server-celery-1  Started
- ```
+```
+cd src/regps; gunicorn -b 0.0.0.0:8000 app:app --reload
+```
 
+Requires a running [Redis](https://redis.io/) instance on the default port. 
+
+### Webapp
+The web app (UI front-end) uses Signify/KERIA for selecting identifiers and credentials:
+See: [reg-poc-webapp](https://github.com/GLEIF-IT/reg-poc-webapp)
+
+### Verifier
+The verifier uses [keripy](https://github.com/WebOfTRust/keripy) for verifying the requets:
+See: [reg-poc-verifier](https://github.com/GLEIF-IT/reg-poc-verifier)
+
+### Additional service
+* KERI Witness Network
+* vLEI server
+* KERI Agent
+
+The deployment architecture is demonstrated in [reg-poc](https://github.com/GLEIF-IT/reg-poc)
+
+#### REST API
  You can run a test query using Swagger by going to:
  ```
  http://127.0.0.1:8000/api/doc#
