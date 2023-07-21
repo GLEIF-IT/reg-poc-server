@@ -1,4 +1,4 @@
-from app.tasks import check_login, check_upload, upload, verify_rep, verify_req
+from app.tasks import check_login, check_upload, upload, verify_vlei, verify_req
 # from celery.result import AsyncResult
 import falcon
 from falcon import media
@@ -137,7 +137,7 @@ class LoginTask(object):
             data = json.loads(raw_json)
             print(f"LoginTask.on_post: sending data {str(data)[:50]}...")
             # result = verify(data['aid'], data['said'], data['vlei'])
-            result = verify_rep(data['aid'], data['said'], data['vlei'])
+            result = verify_vlei(data['aid'], data['said'], data['vlei'])
             print(f"LoginTask.on_post: Will poll for result {result}")
             while not result.ready():
                 time.sleep(1)
@@ -280,6 +280,27 @@ def swagger_ui(app):
     report_zip = None
     with open('app/data/report.zip', 'rb') as rfile:        
         report_zip = rfile
+
+# {
+#     'HOST': 'localhost:8000', 
+#     'CONNECTION': 'keep-alive', 
+#     'CONTENT-LENGTH': '0', 
+#     'SEC-CH-UA': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"', 
+#     'SIGNIFY-RESOURCE': 'EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei', 
+#     'SEC-CH-UA-MOBILE': '?0', 
+#     'SIGNATURE-INPUT': 'signify=("signify-resource" "@method" "@path" "signify-timestamp");created=1689021741;keyid="EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei";alg="ed25519"', 
+#     'USER-AGENT': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36', 
+#     'ACCEPT': 'application/json', 
+#     'SIGNATURE': 'indexed="?0";signify="0BDQ4PhhM6N6QuphJqVLHYnKDgyCxgFa6wMDVhCH2jRYpZcB8zozvpUL74GPVbxSa6A6LD5fYtFwsQ_dce9X90wA"', 'SEC-CH-UA-PLATFORM': '"macOS"', 
+#     'ORIGIN': 'http://localhost:8000', 
+#     'SEC-FETCH-SITE': 'same-origin', 
+#     'SEC-FETCH-MODE': 'cors', 
+#     'SEC-FETCH-DEST': 'empty', 
+#     'REFERER': 'http://localhost:8000/api/doc', 
+#     'ACCEPT-ENCODING': 'gzip, deflate, br', 
+#     'ACCEPT-LANGUAGE': 'en-US,en;q=0.9'}
+# post response {"title": "404 Not Found", "description": "unknown EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei used to sign header"}
+# serializing response {'status_code': 404, 'text': '{"title": "404 Not Found", "description": "unknown EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei used to sign header"}', 'headers': {'Content-Type': 'application/json'}}
 
     config = {"openapi":"3.0.1",
             "info":{"title":"Regulator portal service api","description":"Regulator web portal service api","version":"1.0.0"},

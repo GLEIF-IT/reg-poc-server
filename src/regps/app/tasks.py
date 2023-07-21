@@ -62,7 +62,7 @@ def check_login(aid):
     return serResp(gres)
 
 # @app.task
-def verify_rep(aid,said,vlei):
+def verify_vlei(aid,said,vlei):
     # first check to see if we're already logged in
     print("Login verification started {} {}....".format(aid,said,vlei[:50]))
     gres = check_login(aid)
@@ -90,7 +90,7 @@ def verify_req(req):
     print("putting to {}".format(requrl+f"{req}"))
     print(f"verify_req headers {req.headers}")
     pres = requests.post(requrl+"EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei")
-    print("put response {}".format(pres.text))
+    print("post response {}".format(pres.text))
     return serResp(pres)
         
 # @app.task
