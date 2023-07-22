@@ -9,46 +9,47 @@ from celery.utils.log import get_task_logger
     
 logger = get_task_logger(__name__)
 
-dbrok = "redis://127.0.0.1:6379/0"
-dback = "redis://127.0.0.1:6379/0"
+# dbrok = "redis://127.0.0.1:6379/0"
+# dback = "redis://127.0.0.1:6379/0"
 
-CELERY_BROKER = os.environ.get('CELERY_BROKER')
-if CELERY_BROKER is None:
-    logger.debug(f"CELERY_BROKER is not set. Using default {dbrok}")
-    CELERY_BROKER = dbrok
-CELERY_BACKEND = os.environ.get('CELERY_BACKEND')
-if CELERY_BACKEND is None:
-    logger.debug(f"CELERY_BACKEND is not set. Using default {dback}")
-    CELERY_BACKEND = dback
+# CELERY_BROKER = os.environ.get('CELERY_BROKER')
+# if CELERY_BROKER is None:
+#     logger.debug(f"CELERY_BROKER is not set. Using default {dbrok}")
+#     CELERY_BROKER = dbrok
+# CELERY_BACKEND = os.environ.get('CELERY_BACKEND')
+# if CELERY_BACKEND is None:
+#     logger.debug(f"CELERY_BACKEND is not set. Using default {dback}")
+#     CELERY_BACKEND = dback
     
-app = celery.Celery('tasks', broker=CELERY_BROKER, backend=CELERY_BACKEND)
+# app = celery.Celery('tasks', broker=CELERY_BROKER, backend=CELERY_BACKEND)
 
 auths_url = "http://127.0.0.1:7676/authorizations/"
 presentations_url = "http://127.0.0.1:7676/presentations/"
 reports_url = "http://127.0.0.1:7676/reports/"
+request_url = "http://localhost:7676/request/verify/"
 
-VERIFIER_AUTHORIZATIONS = os.environ.get('VERIFIER_AUTHORIZATIONS')
-if VERIFIER_AUTHORIZATIONS is None:
-        logger.debug(f"VERIFIER_AUTHORIZATIONS is not set. Using default {auths_url}")
-else:
-        logger.debug(f"VERIFIER_AUTHORIZATIONS is set. Using {VERIFIER_AUTHORIZATIONS}")
-        auths_url = VERIFIER_AUTHORIZATIONS
+# VERIFIER_AUTHORIZATIONS = os.environ.get('VERIFIER_AUTHORIZATIONS')
+# if VERIFIER_AUTHORIZATIONS is None:
+#         logger.debug(f"VERIFIER_AUTHORIZATIONS is not set. Using default {auths_url}")
+# else:
+#         logger.debug(f"VERIFIER_AUTHORIZATIONS is set. Using {VERIFIER_AUTHORIZATIONS}")
+#         auths_url = VERIFIER_AUTHORIZATIONS
         
-VERIFIER_PRESENTATIONS = os.environ.get('VERIFIER_PRESENTATIONS')
-if VERIFIER_PRESENTATIONS is None:
-        logger.debug(f"VERIFIER_PRESENTATIONS is not set. Using default {presentations_url}")
-else:
-        logger.debug(f"VERIFIER_PRESENTATIONS is set. Using {VERIFIER_PRESENTATIONS}")
-        presentations_url = VERIFIER_PRESENTATIONS
+# VERIFIER_PRESENTATIONS = os.environ.get('VERIFIER_PRESENTATIONS')
+# if VERIFIER_PRESENTATIONS is None:
+#         logger.debug(f"VERIFIER_PRESENTATIONS is not set. Using default {presentations_url}")
+# else:
+#         logger.debug(f"VERIFIER_PRESENTATIONS is set. Using {VERIFIER_PRESENTATIONS}")
+#         presentations_url = VERIFIER_PRESENTATIONS
 
-VERIFIER_REPORTS = os.environ.get('VERIFIER_REPORTS')
-if VERIFIER_REPORTS is None:
-        logger.debug(f"VERIFIER_REPORTS is not set. Using default {reports_url}")
-else:
-        logger.debug(f"VERIFIER_REPORTS is set. Using {VERIFIER_REPORTS}")
-        reports_url = VERIFIER_REPORTS
+# VERIFIER_REPORTS = os.environ.get('VERIFIER_REPORTS')
+# if VERIFIER_REPORTS is None:
+#         logger.debug(f"VERIFIER_REPORTS is not set. Using default {reports_url}")
+# else:
+#         logger.debug(f"VERIFIER_REPORTS is set. Using {VERIFIER_REPORTS}")
+#         reports_url = VERIFIER_REPORTS
 
-@app.task
+# @app.task
 def check_login(aid: str) -> dict:
     return serialize(_login(aid))
 
@@ -59,8 +60,8 @@ def _login(aid: str) -> falcon.Response:
     logger.debug(f"login status: {gres}")
     return gres
 
-@app.task
-def verify(aid: str, said: str, vlei: str) -> dict:
+# @app.task
+def verify_vlei(aid: str, said: str, vlei: str) -> dict:
     # first check to see if we're already logged in
     logger.debug(f"Login verification started {aid} {said} {vlei[:50]}")
 
@@ -85,7 +86,16 @@ def verify(aid: str, said: str, vlei: str) -> dict:
         else:
             return serialize(presentation_response)
         
-@app.task
+# @app.task
+def verify_req(req):
+    print("Request verification started {}....".format(req))
+    print("putting to {}".format(request_url+f"{req}"))
+    print(f"verify_req headers {req.headers}")
+    pres = requests.post(request_url+"EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei")
+    print("post response {}".format(pres.text))
+    return serialize(pres)
+        
+# @app.task
 def check_upload(aid: str, dig: str) -> dict:
     return serialize(_upload(aid, dig))
 
@@ -95,7 +105,7 @@ def _upload(aid: str, dig: str) -> falcon.Response:
     logger.debug(f"upload status: {reports_response}")
     return reports_response
 
-@app.task
+# @app.task
 def upload(aid: str, dig: str, contype: str, report) -> dict:
     logger.debug(f"report type {type(report)}")
     # first check to see if we've already uploaded

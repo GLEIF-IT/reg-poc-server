@@ -1,29 +1,126 @@
-from app.tasks import check_login, check_upload, upload, verify
-from celery.result import AsyncResult
+from app.tasks import check_login, check_upload, upload, verify_vlei, verify_req
+# from celery.result import AsyncResult
 import falcon
 from falcon import media
 from falcon.http_status import HTTPStatus
 import json
-# from keria.app.agenting import Agency
-# from keria.core.authing import Authenticater
+from keri import kering
+from keri.end import ending
 import os
 from swagger_ui import api_doc
 import time
 
 uploadStatus = {}
 
-# agency = Agency(name="wsagency", base="", bran="", configFile="server-config.json", configDir="/Users/meenyleeny/VSCode/reg-poc-server/scripts")
-# auth = Authenticater(agency=agency)
+class AuthSigs(object):
 
-class HandleSigs(object):
+    DefaultFields = ["Signify-Resource",
+                     "@method",
+                     "@path",
+                     "Signify-Timestamp"]
+
+    def __init__(self):
+        """ Create Agent Authenticator for verifying requests and signing responses
+        Parameters:
+            agency(Agency): habitat of Agent for signing responses
+        Returns:
+              Authenicator:  the configured habery
+        """
+        # self.agency = agency
+
     def process_request(self, req, resp):
-        print(f"HandleSigs.process_request {req}")
-        # res = auth.verify(req)
-        # print(f"HandleSigs.process_request is sig valid: {res}")
-        # if res == False:
-        #     raise HTTPStatus(falcon.HTTP_401, text='Signature headers are not valid\n')
+        print(f"Processing header verification request {req}")
+        result = self.verify(req)
+        print(f"Header verification request {result}")
 
-verSig = HandleSigs()
+    def on_post(self, req, resp):
+        print(f"Processing header verification request {req}")
+        result = self.verify(req)
+        resp.status = falcon.code_to_http_status(result["status_code"])
+        resp.text = result["text"]
+        resp.content_type = result["headers"]['Content-Type']
+        print(f"Header verification request {resp}")
+
+    @staticmethod
+    def resource(req):
+        headers = req.headers
+        if "SIGNIFY-RESOURCE" not in headers:
+            raise ValueError("Missing signify resource header")
+
+        return headers["SIGNIFY-RESOURCE"]
+
+    def verify(self, req):
+        print(f"verifying req {req}")
+
+        headers = req.headers
+        if "SIGNATURE-INPUT" not in headers or "SIGNATURE" not in headers:
+            return False
+
+        siginput = headers["SIGNATURE-INPUT"]
+        if not siginput:
+            return False
+        signature = headers["SIGNATURE"]
+        if not signature:
+            return False
+
+        inputs = ending.desiginput(siginput.encode("utf-8"))
+        inputs = [i for i in inputs if i.name == "signify"]
+
+        if not inputs:
+            return False
+
+        result="{'status_code': 404, 'text': '{\"title\": \"404 Not Found\", \"description\": \"No result\"}', 'headers': {'Content-Type': 'application/json'}}"
+        for inputage in inputs:
+            items = []
+            for field in inputage.fields:
+                if field.startswith("@"):
+                    if field == "@method":
+                        items.append(f'"{field}": {req.method}')
+                    elif field == "@path":
+                        items.append(f'"{field}": {req.path}')
+
+                else:
+                    key = field.upper()
+                    field = field.lower()
+                    if key not in headers:
+                        continue
+
+                    value = ending.normalize(headers[key])
+                    items.append(f'"{field}": {value}')
+
+            values = [f"({' '.join(inputage.fields)})", f"created={inputage.created}"]
+            if inputage.expires is not None:
+                values.append(f"expires={inputage.expires}")
+            if inputage.nonce is not None:
+                values.append(f"nonce={inputage.nonce}")
+            if inputage.keyid is not None:
+                values.append(f"keyid={inputage.keyid}")
+            if inputage.context is not None:
+                values.append(f"context={inputage.context}")
+            if inputage.alg is not None:
+                values.append(f"alg={inputage.alg}")
+
+            params = ';'.join(values)
+
+            items.append(f'"@signature-params: {params}"')
+            ser = "\n".join(items).encode("utf-8")
+
+            resource = self.resource(req)
+
+            signages = ending.designature(signature)
+            cig = signages[0].markers[inputage.name]
+
+            # raw_json = req.stream.read()
+            # print(f"AuthSigs.on_post: processing json {raw_json}")
+            # data = json.loads(raw_json)
+            result = verify_req(req)
+            print(f"AuthSigs.on_post: result {result}")
+            if result['status_code'] > 300:
+                return result
+
+        return result
+
+verSig = AuthSigs()
 
 class LoginTask(object):
 
@@ -33,14 +130,13 @@ class LoginTask(object):
             raw_json = req.stream.read()
             data = json.loads(raw_json)
             print(f"LoginTask.on_post: sending data {str(data)[:50]}...")
-            # result = verify(data['aid'], data['said'], data['vlei'])
-            result = verify.apply_async(args=(data['aid'], data['said'], data['vlei']))
-            print(f"LoginTask.on_post: Will poll for result {result}")
-            while not result.ready():
-                time.sleep(1)
-                print(f"LoginTask.on_post: polling for result {result.id}")
-                result = AsyncResult(result.id)  # Refresh the result object
-            result = result.get()
+            result = verify_vlei(data['aid'], data['said'], data['vlei'])
+            # print(f"LoginTask.on_post: Will poll for result {result}")
+            # while not result.ready():
+            #     time.sleep(1)
+            #     print(f"LoginTask.on_post: polling for result {result.id}")
+            #     result = AsyncResult(result.id)  # Refresh the result object
+            # result = result.get()
             print(f"LoginTask.on_post: received data {result['status_code']}")
             if(result["status_code"] < 400):
                 print("Logged in user, checking status...")
@@ -73,18 +169,18 @@ class UploadTask(object):
         
     def on_post(self, req, resp, aid, dig):
         print("UploadTask.on_post {}".format(req))
-        verSig.process_request(req, resp)
+        # verSig.process_request(req, resp)
         try:
             raw = req.bounded_stream.read()
             # data = json.loads(raw)
             print(f"UploadTask.on_post: request for {aid} {dig} {raw} {req.content_type}")
-            result = upload.apply_async(args=(aid, dig, req.content_type, raw))
+            result = upload(aid, dig, req.content_type, raw)
             print(f"UploadTask.on_post: received data {result}")
-            while not result.ready():
-                time.sleep(1)
-                print(f"LoginTask.on_post: polling for result {result.id}")
-                result = AsyncResult(result.id)  # Refresh the result object
-            result = result.get()
+            # while not result.ready():
+            #     time.sleep(1)
+            #     print(f"LoginTask.on_post: polling for result {result.id}")
+            #     result = AsyncResult(result.id)  # Refresh the result object
+            # result = result.get()
             resp.status = falcon.code_to_http_status(result["status_code"])
             resp.text = result["text"]
             resp.content_type = result["headers"]['Content-Type']
@@ -178,6 +274,27 @@ def swagger_ui(app):
     with open('app/data/report.zip', 'rb') as rfile:        
         report_zip = rfile
 
+# {
+#     'HOST': 'localhost:8000', 
+#     'CONNECTION': 'keep-alive', 
+#     'CONTENT-LENGTH': '0', 
+#     'SEC-CH-UA': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"', 
+#     'SIGNIFY-RESOURCE': 'EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei', 
+#     'SEC-CH-UA-MOBILE': '?0', 
+#     'SIGNATURE-INPUT': 'signify=("signify-resource" "@method" "@path" "signify-timestamp");created=1689021741;keyid="EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei";alg="ed25519"', 
+#     'USER-AGENT': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36', 
+#     'ACCEPT': 'application/json', 
+#     'SIGNATURE': 'indexed="?0";signify="0BDQ4PhhM6N6QuphJqVLHYnKDgyCxgFa6wMDVhCH2jRYpZcB8zozvpUL74GPVbxSa6A6LD5fYtFwsQ_dce9X90wA"', 'SEC-CH-UA-PLATFORM': '"macOS"', 
+#     'ORIGIN': 'http://localhost:8000', 
+#     'SEC-FETCH-SITE': 'same-origin', 
+#     'SEC-FETCH-MODE': 'cors', 
+#     'SEC-FETCH-DEST': 'empty', 
+#     'REFERER': 'http://localhost:8000/api/doc', 
+#     'ACCEPT-ENCODING': 'gzip, deflate, br', 
+#     'ACCEPT-LANGUAGE': 'en-US,en;q=0.9'}
+# post response {"title": "404 Not Found", "description": "unknown EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei used to sign header"}
+# serializing response {'status_code': 404, 'text': '{"title": "404 Not Found", "description": "unknown EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei used to sign header"}', 'headers': {'Content-Type': 'application/json'}}
+
     config = {"openapi":"3.0.1",
             "info":{"title":"Regulator portal service api","description":"Regulator web portal service api","version":"1.0.0"},
             "servers":[{"url":"http://127.0.0.1:8000","description":"local server"}],
@@ -250,7 +367,22 @@ def swagger_ui(app):
                                                                 "size": 3390,
                                                                 "message": "No signatures found in manifest file"
                                         }]}}}}},
-                                        }}
+                                        }},
+                    "/verify/header":{"post":{"tags":["default"],
+                                        "summary":"Given an AID, returns if the headers are properly signed",
+                                        "parameters":[
+                                            {"in":"header","name":"Signature","required":"true",
+                                             "schema":{"type":"string","example":"indexed=\"?0\";signify=\"0BDQ4PhhM6N6QuphJqVLHYnKDgyCxgFa6wMDVhCH2jRYpZcB8zozvpUL74GPVbxSa6A6LD5fYtFwsQ_dce9X90wA\""},
+                                             "description":"The signature of the data"},
+                                            {"in":"header","name":"Signature-Input","required":"true",
+                                             "schema":{"type":"string","example":"signify=(\"signify-resource\" \"@method\" \"@path\" \"signify-timestamp\");created=1689021741;keyid=\"EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei\";alg=\"ed25519\""},
+                                             "description":"The signature of the data"},
+                                            {"in":"header","name":"Signify-Resource","required":"true",
+                                             "schema":{"type":"string","example":"EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei"},
+                                             "description":"The signature of the data"}
+                                        ],
+                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}},
+                                        }},
                     }}
 
     doc = api_doc(app, config=config, url_prefix='/api/doc', title='API doc', editor=True)
@@ -275,23 +407,9 @@ def falcon_app():
     app.add_route('/upload/{aid}/{dig}', UploadTask())
     app.add_route("/checkupload/{aid}/{dig}", UploadTask())
     app.add_route("/status/{aid}", StatusTask())
+    app.add_route("/verify/header", verSig)
     
     return app
-
-# async def appl(scope, receive, send):
-#     assert scope['type'] == 'http'
-
-#     await send({
-#         'type': 'http.response.start',
-#         'status': 200,
-#         'headers': [
-#             [b'content-type', b'text/plain'],
-#         ],
-#     })
-#     await send({
-#         'type': 'http.response.body',
-#         'body': b'Hello, world!',
-#     })
     
 def main():
     print("Starting RegPS...")
