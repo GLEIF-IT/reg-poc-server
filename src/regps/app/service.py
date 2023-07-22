@@ -110,10 +110,7 @@ class AuthSigs(object):
             signages = ending.designature(signature)
             cig = signages[0].markers[inputage.name]
 
-            # raw_json = req.stream.read()
-            # print(f"AuthSigs.on_post: processing json {raw_json}")
-            # data = json.loads(raw_json)
-            result = verify_req(req)
+            result = verify_req(req,cig.raw,ser)
             print(f"AuthSigs.on_post: result {result}")
             if result['status_code'] > 300:
                 return result
@@ -169,7 +166,7 @@ class UploadTask(object):
         
     def on_post(self, req, resp, aid, dig):
         print("UploadTask.on_post {}".format(req))
-        # verSig.process_request(req, resp)
+        verSig.process_request(req, resp)
         try:
             raw = req.bounded_stream.read()
             # data = json.loads(raw)
