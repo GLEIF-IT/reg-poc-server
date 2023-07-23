@@ -105,12 +105,14 @@ class AuthSigs(object):
             items.append(f'"@signature-params: {params}"')
             ser = "\n".join(items).encode("utf-8")
 
-            resource = self.resource(req)
+            # resource = self.resource(req)
 
             signages = ending.designature(signature)
             cig = signages[0].markers[inputage.name]
 
-            result = verify_req(req,cig.raw,ser)
+            aid = req.headers['SIGNIFY-RESOURCE']
+            print(f"verifying {aid} {ser} {cig}")
+            result = verify_req(aid,cig.qb64,ser)
             print(f"AuthSigs.on_post: result {result}")
             if result['status_code'] > 300:
                 return result

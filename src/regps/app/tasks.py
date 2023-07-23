@@ -87,9 +87,8 @@ def verify_vlei(aid: str, said: str, vlei: str) -> dict:
             return serialize(presentation_response)
         
 # @app.task
-def verify_req(req,cig,ser):
-    print("Request verification started {}....".format(req))
-    aid = req.headers['SIGNIFY-RESOURCE']
+def verify_req(aid,cig,ser):
+    print("Request verification started aid = {}, cig = {}, ser = {}....".format(aid,cig,ser))
     print("posting to {}".format(request_url+f"{aid}"))
     print(f"verify_req headers {aid}")
     pres = requests.post(request_url+aid, params={"sig": cig,"data": ser})
