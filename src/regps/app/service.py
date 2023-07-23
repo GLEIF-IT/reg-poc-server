@@ -31,15 +31,17 @@ class AuthSigs(object):
     def process_request(self, req, resp):
         print(f"Processing header verification request {req}")
         result = self.verify(req)
-        print(f"Header verification request {result}")
+        if result['status_code'] >= 400:
+            resp.status = falcon.code_to_http_status(result["status_code"])
+            resp.text = result["text"]
+            resp.content_type = result["headers"]['Content-Type']
+            print(f"Header verification failed request {resp}")
+            return resp
+        else :
+            print(f"Header verification succeeded {resp}")
 
     def on_post(self, req, resp):
-        print(f"Processing header verification request {req}")
-        result = self.verify(req)
-        resp.status = falcon.code_to_http_status(result["status_code"])
-        resp.text = result["text"]
-        resp.content_type = result["headers"]['Content-Type']
-        print(f"Header verification request {resp}")
+        return self.process_request(req, resp)
 
     @staticmethod
     def resource(req):
@@ -103,7 +105,7 @@ class AuthSigs(object):
             params = ';'.join(values)
 
             items.append(f'"@signature-params: {params}"')
-            ser = "\n".join(items).encode("utf-8")
+            ser = "\n".join(items)
 
             # resource = self.resource(req)
 
@@ -114,7 +116,7 @@ class AuthSigs(object):
             print(f"verifying {aid} {ser} {cig}")
             result = verify_req(aid,cig.qb64,ser)
             print(f"AuthSigs.on_post: result {result}")
-            if result['status_code'] > 300:
+            if result['status_code'] >= 400:
                 return result
 
         return result
@@ -168,7 +170,10 @@ class UploadTask(object):
         
     def on_post(self, req, resp, aid, dig):
         print("UploadTask.on_post {}".format(req))
-        verSig.process_request(req, resp)
+        sig_check = verSig.process_request(req, resp)
+        if sig_check:
+            print(f"UploadTask.on_post: Invalid signature on headers")
+            return sig_check
         try:
             raw = req.bounded_stream.read()
             # data = json.loads(raw)
@@ -198,7 +203,10 @@ class UploadTask(object):
             
     def on_get(self, req, resp, aid, dig):
         print("UploadTask.on_get")
-        verSig.process_request(req, resp)
+        sig_check = verSig.process_request(req, resp)
+        if sig_check:
+            print(f"UploadTask.on_post: Invalid signature on headers")
+            return sig_check
         try:
             # raw_json = req.stream.read()
             # data = json.loads(raw_json)
@@ -217,7 +225,10 @@ class StatusTask(object):
              
     def on_get(self, req, resp, aid):
         print(f"StatusTask.on_get request ")
-        verSig.process_request(req, resp)
+        sig_check = verSig.process_request(req, resp)
+        if sig_check:
+            print(f"UploadTask.on_post: Invalid signature on headers")
+            return sig_check
         try:
             # raw_json = req.stream.read()
             # data = json.loads(raw_json)
@@ -272,27 +283,6 @@ def swagger_ui(app):
     report_zip = None
     with open('app/data/report.zip', 'rb') as rfile:        
         report_zip = rfile
-
-# {
-#     'HOST': 'localhost:8000', 
-#     'CONNECTION': 'keep-alive', 
-#     'CONTENT-LENGTH': '0', 
-#     'SEC-CH-UA': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"', 
-#     'SIGNIFY-RESOURCE': 'EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei', 
-#     'SEC-CH-UA-MOBILE': '?0', 
-#     'SIGNATURE-INPUT': 'signify=("signify-resource" "@method" "@path" "signify-timestamp");created=1689021741;keyid="EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei";alg="ed25519"', 
-#     'USER-AGENT': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36', 
-#     'ACCEPT': 'application/json', 
-#     'SIGNATURE': 'indexed="?0";signify="0BDQ4PhhM6N6QuphJqVLHYnKDgyCxgFa6wMDVhCH2jRYpZcB8zozvpUL74GPVbxSa6A6LD5fYtFwsQ_dce9X90wA"', 'SEC-CH-UA-PLATFORM': '"macOS"', 
-#     'ORIGIN': 'http://localhost:8000', 
-#     'SEC-FETCH-SITE': 'same-origin', 
-#     'SEC-FETCH-MODE': 'cors', 
-#     'SEC-FETCH-DEST': 'empty', 
-#     'REFERER': 'http://localhost:8000/api/doc', 
-#     'ACCEPT-ENCODING': 'gzip, deflate, br', 
-#     'ACCEPT-LANGUAGE': 'en-US,en;q=0.9'}
-# post response {"title": "404 Not Found", "description": "unknown EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei used to sign header"}
-# serializing response {'status_code': 404, 'text': '{"title": "404 Not Found", "description": "unknown EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei used to sign header"}', 'headers': {'Content-Type': 'application/json'}}
 
     config = {"openapi":"3.0.1",
             "info":{"title":"Regulator portal service api","description":"Regulator web portal service api","version":"1.0.0"},
