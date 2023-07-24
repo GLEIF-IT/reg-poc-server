@@ -28,26 +28,33 @@ presentations_url = "http://127.0.0.1:7676/presentations/"
 reports_url = "http://127.0.0.1:7676/reports/"
 request_url = "http://localhost:7676/request/verify/"
 
-# VERIFIER_AUTHORIZATIONS = os.environ.get('VERIFIER_AUTHORIZATIONS')
-# if VERIFIER_AUTHORIZATIONS is None:
-#         logger.debug(f"VERIFIER_AUTHORIZATIONS is not set. Using default {auths_url}")
-# else:
-#         logger.debug(f"VERIFIER_AUTHORIZATIONS is set. Using {VERIFIER_AUTHORIZATIONS}")
-#         auths_url = VERIFIER_AUTHORIZATIONS
+VERIFIER_AUTHORIZATIONS = os.environ.get('VERIFIER_AUTHORIZATIONS')
+if VERIFIER_AUTHORIZATIONS is None:
+        logger.debug(f"VERIFIER_AUTHORIZATIONS is not set. Using default {auths_url}")
+else:
+        logger.debug(f"VERIFIER_AUTHORIZATIONS is set. Using {VERIFIER_AUTHORIZATIONS}")
+        auths_url = VERIFIER_AUTHORIZATIONS
         
-# VERIFIER_PRESENTATIONS = os.environ.get('VERIFIER_PRESENTATIONS')
-# if VERIFIER_PRESENTATIONS is None:
-#         logger.debug(f"VERIFIER_PRESENTATIONS is not set. Using default {presentations_url}")
-# else:
-#         logger.debug(f"VERIFIER_PRESENTATIONS is set. Using {VERIFIER_PRESENTATIONS}")
-#         presentations_url = VERIFIER_PRESENTATIONS
+VERIFIER_PRESENTATIONS = os.environ.get('VERIFIER_PRESENTATIONS')
+if VERIFIER_PRESENTATIONS is None:
+        logger.debug(f"VERIFIER_PRESENTATIONS is not set. Using default {presentations_url}")
+else:
+        logger.debug(f"VERIFIER_PRESENTATIONS is set. Using {VERIFIER_PRESENTATIONS}")
+        presentations_url = VERIFIER_PRESENTATIONS
 
-# VERIFIER_REPORTS = os.environ.get('VERIFIER_REPORTS')
-# if VERIFIER_REPORTS is None:
-#         logger.debug(f"VERIFIER_REPORTS is not set. Using default {reports_url}")
-# else:
-#         logger.debug(f"VERIFIER_REPORTS is set. Using {VERIFIER_REPORTS}")
-#         reports_url = VERIFIER_REPORTS
+VERIFIER_REPORTS = os.environ.get('VERIFIER_REPORTS')
+if VERIFIER_REPORTS is None:
+        logger.debug(f"VERIFIER_REPORTS is not set. Using default {reports_url}")
+else:
+        logger.debug(f"VERIFIER_REPORTS is set. Using {VERIFIER_REPORTS}")
+        reports_url = VERIFIER_REPORTS
+        
+VERIFIER_REQUESTS = os.environ.get('VERIFIER_REQUESTS')
+if VERIFIER_REQUESTS is None:
+        logger.debug(f"VERIFIER_REQUESTS is not set. Using default {request_url}")
+else:
+        logger.debug(f"VERIFIER_REPORTS is set. Using {VERIFIER_REQUESTS}")
+        request_url = VERIFIER_REQUESTS
 
 # @app.task
 def check_login(aid: str) -> dict:
