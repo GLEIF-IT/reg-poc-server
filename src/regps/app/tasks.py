@@ -1,13 +1,14 @@
 # regps/app/tasks.py
 
-import celery
+# import celery
 import falcon
+import logging
 import os
 import requests
 from time import sleep
-from celery.utils.log import get_task_logger
+# from celery.utils.log import get_task_logger
     
-logger = get_task_logger(__name__)
+# logger = get_task_logger(__name__)
 
 # dbrok = "redis://127.0.0.1:6379/0"
 # dback = "redis://127.0.0.1:6379/0"
@@ -22,6 +23,9 @@ logger = get_task_logger(__name__)
 #     CELERY_BACKEND = dback
     
 # app = celery.Celery('tasks', broker=CELERY_BROKER, backend=CELERY_BACKEND)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 auths_url = "http://127.0.0.1:7676/authorizations/"
 presentations_url = "http://127.0.0.1:7676/presentations/"
