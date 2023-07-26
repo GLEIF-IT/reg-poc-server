@@ -57,7 +57,7 @@ VERIFIER_REQUESTS = os.environ.get('VERIFIER_REQUESTS')
 if VERIFIER_REQUESTS is None:
         print(f"VERIFIER_REQUESTS is not set. Using default {request_url}")
 else:
-        print(f"VERIFIER_REPORTS is set. Using {VERIFIER_REQUESTS}")
+        print(f"VERIFIER_REQUESTS is set. Using {VERIFIER_REQUESTS}")
         request_url = VERIFIER_REQUESTS
 
 # @app.task
