@@ -41,7 +41,7 @@ def check_login(aid: str) -> dict:
 
 def _login(aid: str) -> falcon.Response:
     print(f"checking login: {aid}")
-
+    print(f"getting from {auths_url}{aid}")
     gres = requests.get(f"{auths_url}{aid}", headers={"Content-Type": "application/json"})
     print(f"login status: {gres}")
     return gres
@@ -57,7 +57,7 @@ def verify_vlei(aid: str, said: str, vlei: str) -> dict:
         print("already logged in")
         return serialize(login_response)
     else:
-        print(f"putting to {presentations_url} {said}")
+        print(f"putting to {presentations_url}{said}")
         presentation_response = requests.put(f"{presentations_url}{said}", headers={"Content-Type": "application/json+cesr"}, data=vlei)
         print(f"put response {presentation_response.text}")
 
@@ -84,6 +84,7 @@ def check_upload(aid: str, dig: str) -> dict:
 
 def _upload(aid: str, dig: str) -> falcon.Response:
     print(f"checking upload: aid {aid} and dig {dig}")
+    print(f"getting from {reports_url}{aid}/{dig}")
     reports_response = requests.get(f"{reports_url}{aid}/{dig}", headers={"Content-Type": "application/json"})
     print(f"upload status: {reports_response}")
     return reports_response
@@ -96,7 +97,7 @@ def upload(aid: str, dig: str, contype: str, report) -> dict:
         print("already uploaded")
         return serialize(upload_response)
     else:
-        print(f"posting to {reports_url} {dig}")
+        print(f"posting to {reports_url}{aid}/{dig}")
         presentation_response = requests.post(f"{reports_url}{aid}/{dig}", headers={"Content-Type": contype}, data=report)
         print(f"post response {presentation_response.text}")
 
