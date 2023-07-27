@@ -1,5 +1,4 @@
 from app.tasks import check_login, check_upload, upload, verify_vlei, verify_req
-# from celery.result import AsyncResult
 import falcon
 from falcon import media
 from falcon.http_status import HTTPStatus
@@ -8,7 +7,6 @@ from keri import kering
 from keri.end import ending
 import os
 from swagger_ui import api_doc
-import time
 
 uploadStatus = {}
 
@@ -18,15 +16,6 @@ class AuthSigs(object):
                      "@method",
                      "@path",
                      "Signify-Timestamp"]
-
-    def __init__(self):
-        """ Create Agent Authenticator for verifying requests and signing responses
-        Parameters:
-            agency(Agency): habitat of Agent for signing responses
-        Returns:
-              Authenicator:  the configured habery
-        """
-        # self.agency = agency
 
     def process_request(self, req, resp):
         print(f"Processing header verification request {req}")
@@ -40,16 +29,8 @@ class AuthSigs(object):
         else :
             print(f"Header verification succeeded {resp}")
 
-    def on_post(self, req, resp):
+    def on_get(self, req, resp):
         return self.process_request(req, resp)
-
-    @staticmethod
-    def resource(req):
-        headers = req.headers
-        if "SIGNIFY-RESOURCE" not in headers:
-            raise ValueError("Missing signify resource header")
-
-        return headers["SIGNIFY-RESOURCE"]
 
     def verify(self, req):
         print(f"verifying req {req}")
@@ -107,8 +88,6 @@ class AuthSigs(object):
             items.append(f'"@signature-params: {params}"')
             ser = "\n".join(items)
 
-            # resource = self.resource(req)
-
             signages = ending.designature(signature)
             cig = signages[0].markers[inputage.name]
 
@@ -132,12 +111,7 @@ class LoginTask(object):
             data = json.loads(raw_json)
             print(f"LoginTask.on_post: sending data {str(data)[:50]}...")
             result = verify_vlei(data['aid'], data['said'], data['vlei'])
-            # print(f"LoginTask.on_post: Will poll for result {result}")
-            # while not result.ready():
-            #     time.sleep(1)
-            #     print(f"LoginTask.on_post: polling for result {result.id}")
-            #     result = AsyncResult(result.id)  # Refresh the result object
-            # result = result.get()
+
             print(f"LoginTask.on_post: received data {result['status_code']}")
             if(result["status_code"] < 400):
                 print("Logged in user, checking status...")
@@ -176,15 +150,10 @@ class UploadTask(object):
             return sig_check
         try:
             raw = req.bounded_stream.read()
-            # data = json.loads(raw)
             print(f"UploadTask.on_post: request for {aid} {dig} {raw} {req.content_type}")
             result = upload(aid, dig, req.content_type, raw)
             print(f"UploadTask.on_post: received data {result}")
-            # while not result.ready():
-            #     time.sleep(1)
-            #     print(f"LoginTask.on_post: polling for result {result.id}")
-            #     result = AsyncResult(result.id)  # Refresh the result object
-            # result = result.get()
+
             resp.status = falcon.code_to_http_status(result["status_code"])
             resp.text = result["text"]
             resp.content_type = result["headers"]['Content-Type']
@@ -208,8 +177,6 @@ class UploadTask(object):
             print(f"UploadTask.on_post: Invalid signature on headers")
             return sig_check
         try:
-            # raw_json = req.stream.read()
-            # data = json.loads(raw_json)
             print(f"UploadTask.on_get: sending aid {aid} for dig {dig}")
             result = check_upload(aid, dig)
             print(f"UploadTask.on_get: received data {result}")
@@ -230,8 +197,6 @@ class StatusTask(object):
             print(f"UploadTask.on_post: Invalid signature on headers")
             return sig_check
         try:
-            # raw_json = req.stream.read()
-            # data = json.loads(raw_json)
             print(f"StatusTask.on_get: aid {aid}")
             if(aid not in uploadStatus):
                 print(f"UploadTask.on_post: Cannot find status for {aid}")
@@ -243,7 +208,6 @@ class StatusTask(object):
                 resp.status = falcon.HTTP_200
                 resp.text = json.dumps({f"{aid}":result})
                 if not result:
-                    # no headers
                     print(f"Empty upload status list for aid {aid}")
         except Exception as e:
             print(f"StatusTask.on_get: Exception: {e}")
@@ -305,8 +269,22 @@ def swagger_ui(app):
                                         }},
                     "/upload/{aid}/{dig}":{"post":{"tags":["default"],
                                         "summary":"Given an AID and DIG, returns information about the upload",
-                                        "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
-                                                      {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The digest of the upload"}],
+                                        "parameters":[
+                                                    {"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
+                                                      {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EC7b6S50sY26HTj6AtQiWMDMucsBxMvThkmrKUBXVMf0"},"description":"The digest of the upload"},
+                                                    {"in":"header","name":"Signature","required":"true",
+                                                    "schema":{"type":"string","example":"indexed=\"?0\";signify=\"0BCLs_wv3X6YFoFhB7acH_BePXS7zjBJPvuChdr01cM60Igf_sxYsah9sLHP-pMSYFs1Y6zYUo58HVG8tRd4X1IC\""},
+                                                    "description":"The signature of the data"},
+                                                    {"in":"header","name":"Signature-Input","required":"true",
+                                                    "schema":{"type":"string","example":"signify=(\"@method\" \"@path\" \"signify-resource\" \"signify-timestamp\");created=1690462814;keyid=\"BPmhSfdhCPxr3EqjxzEtF8TVy0YX7ATo0Uc8oo2cnmY9\";alg=\"ed25519\""},
+                                                    "description":"The signature of the data"},
+                                                    {"in":"header","name":"Signify-Resource","required":"true",
+                                                    "schema":{"type":"string","example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},
+                                                    "description":"The aid that siged the data"},
+                                                    {"in":"header","name":"signify-timestamp","required":"true",
+                                                    "schema":{"type":"string","example":"2023-07-27T13:00:14.802000+00:00"},
+                                                    "description":"The timestamp of the data"}  
+                                                      ],
                                         "requestBody":{"required":"true","content":{"multipart/form-data":{"schema":{"type":"object","properties":{
                                             "upload":{"type":"string","format":"binary","example":f"{report_zip}"}
                                             }}}}},
@@ -359,22 +337,7 @@ def swagger_ui(app):
                                                                 "size": 3390,
                                                                 "message": "No signatures found in manifest file"
                                         }]}}}}},
-                                        }},
-                    "/verify/header":{"post":{"tags":["default"],
-                                        "summary":"Given an AID, returns if the headers are properly signed",
-                                        "parameters":[
-                                            {"in":"header","name":"Signature","required":"true",
-                                             "schema":{"type":"string","example":"indexed=\"?0\";signify=\"0BDQ4PhhM6N6QuphJqVLHYnKDgyCxgFa6wMDVhCH2jRYpZcB8zozvpUL74GPVbxSa6A6LD5fYtFwsQ_dce9X90wA\""},
-                                             "description":"The signature of the data"},
-                                            {"in":"header","name":"Signature-Input","required":"true",
-                                             "schema":{"type":"string","example":"signify=(\"signify-resource\" \"@method\" \"@path\" \"signify-timestamp\");created=1689021741;keyid=\"EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei\";alg=\"ed25519\""},
-                                             "description":"The signature of the data"},
-                                            {"in":"header","name":"Signify-Resource","required":"true",
-                                             "schema":{"type":"string","example":"EEXekkGu9IAzav6pZVJhkLnjtjM5v3AcyA-pdKUcaGei"},
-                                             "description":"The signature of the data"}
-                                        ],
-                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}},
-                                        }},
+                                        }}
                     }}
 
     doc = api_doc(app, config=config, url_prefix='/api/doc', title='API doc', editor=True)
@@ -388,11 +351,9 @@ def falcon_app():
     if os.getenv("ENABLE_CORS", "false").lower() in ("true", "1"):
         print("CORS  enabled")
         app.add_middleware(middleware=HandleCORS())
-    # app.add_middleware(middleware=HandleSigs())
     app.req_options.media_handlers.update(media.Handlers())
     app.resp_options.media_handlers.update(media.Handlers())
 
-    # app = falcon.asgi.App()
     app.add_route('/ping', PingResource())
     app.add_route('/login', LoginTask())
     app.add_route("/checklogin/{aid}", LoginTask())
