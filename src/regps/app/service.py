@@ -260,12 +260,18 @@ def swagger_ui(app):
                                             "said":{"type":"string","example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},
                                             "vlei":{"type":"string","example":f"{vlei_contents}"}
                                             }}}}},
-                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}}
+                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
+                                            "aid": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
+                                            "said": "EBdaAMrpqfB0PlTgI3juS8UFgIPAXC1NZd1jSk6acenf"
+                                        }}}}}}
                                         }},
                     "/checklogin/{aid}":{"get":{"tags":["default"],
                                         "summary":"Given an AID returns information about the login",
                                         "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"}],
-                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID logged in"}}}}}}
+                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
+                                            "aid": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
+                                            "said": "EBdaAMrpqfB0PlTgI3juS8UFgIPAXC1NZd1jSk6acenf"
+                                        }}}}}}
                                         }},
                     "/upload/{aid}/{dig}":{"post":{"tags":["default"],
                                         "summary":"Given an AID and DIG, returns information about the upload",
@@ -289,27 +295,27 @@ def swagger_ui(app):
                                             "upload":{"type":"string","format":"binary","example":f"{report_zip}"}
                                             }}}}},
                                         "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
-                                                                "submitter": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
-                                                                "filename": "test_report.zip",
-                                                                "status": "failed",
-                                                                "contentType": "application/zip",
-                                                                "size": 3390,
-                                                                "message": "No signatures found in manifest file"
-                                                                }}}}}},
-                                        }},
-                    "/checkupload/{aid}/{dig}":{"get":{"tags":["default"],
-                                        "summary":"Given an AID and DIG returns information about the upload status",
-                                        "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
-                                                      {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The digest of the upload"}],
-                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
-                                                                "submitter": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
-                                                                "filename": "DUMMYLEI123456789012.IND_FR_IF010200_IFTM_2022-12-31_20220222134211000.zip",
-                                                                "status": "failed",
-                                                                "contentType": "application/zip",
-                                                                "size": 3390,
-                                                                "message": "No signatures found in manifest file"
+                                            "submitter": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
+                                            "filename": "test_ifgroup2023.zip",
+                                            "status": "verified",
+                                            "contentType": "application/zip",
+                                            "size": 4467,
+                                            "message": "All 6 files in report package have been signed by submitter (EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk)."
                                         }}}}}},
                                         }},
+                    # "/checkupload/{aid}/{dig}":{"get":{"tags":["default"],
+                    #                     "summary":"Given an AID and DIG returns information about the upload status",
+                    #                     "parameters":[{"in":"path","name":"aid","required":"true","schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},"description":"The AID"},
+                    #                                   {"in":"path","name":"dig","required":"true","schema":{"type":"string","minimum":1,"example":"EAPHGLJL1s6N4w1Hje5po6JPHu47R9-UoJqLweAci2LV"},"description":"The digest of the upload"}],
+                    #                     "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
+                    #                                             "submitter": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
+                    #                                             "filename": "DUMMYLEI123456789012.IND_FR_IF010200_IFTM_2022-12-31_20220222134211000.zip",
+                    #                                             "status": "failed",
+                    #                                             "contentType": "application/zip",
+                    #                                             "size": 3390,
+                    #                                             "message": "No signatures found in manifest file"
+                    #                     }}}}}},
+                    #                     }},
                     "/status/{aid}":{"get":{"tags":["default"],
                                         "summary":"Given an AID returns information about the upload status",
                                         "parameters":[
@@ -329,14 +335,13 @@ def swagger_ui(app):
                                              "schema":{"type":"string","minimum":1,"example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},
                                              "description":"The AID"}
                                         ],
-                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":[{
-                                                                "submitter": "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk",
-                                                                "filename": "DUMMYLEI123456789012.IND_FR_IF010200_IFTM_2022-12-31_20220222134211000.zip",
-                                                                "status": "failed",
-                                                                "contentType": "application/zip",
-                                                                "size": 3390,
-                                                                "message": "No signatures found in manifest file"
-                                        }]}}}}},
+                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{
+                                            "EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk": [
+                                                "{\"submitter\": \"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk\", \"filename\": \"test_MetaInfReportJson_noSigs.zip\", \"status\": \"failed\", \"contentType\": \"application/zip\", \"size\": 3059, \"message\": \"5 files from report package not signed {'parameters.csv', 'FilingIndicators.csv', 'report.json', 'i_10.01.csv', 'i_10.02.csv'}, []\"}",
+                                                "{\"submitter\": \"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk\", \"filename\": \"test_ifclass3.zip\", \"status\": \"verified\", \"contentType\": \"application/zip\", \"size\": 5662, \"message\": \"All 9 files in report package have been signed by submitter (EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk).\"}",
+                                                "{\"submitter\": \"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk\", \"filename\": \"test_ifgroup2023.zip\", \"status\": \"verified\", \"contentType\": \"application/zip\", \"size\": 4467, \"message\": \"All 6 files in report package have been signed by submitter (EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk).\"}"
+                                            ]
+                                            }}}}}},
                                         }},
                     "/verify/header":{"get":{"tags":["default"],
                                         "summary":"returns if the headers are properly signed",
@@ -354,7 +359,7 @@ def swagger_ui(app):
                                              "schema":{"type":"string","example":"2023-08-01T20:48:21.885000+00:00"},
                                              "description":"The signature of the data"}
                                         ],
-                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}},
+                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "202 ACCEPTED"}}}}}},
                                         }},
                     }}
 
