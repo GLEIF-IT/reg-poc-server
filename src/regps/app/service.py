@@ -191,7 +191,7 @@ class UploadTask(object):
 class StatusTask(object):   
              
     def on_get(self, req, resp, aid):
-        print(f"StatusTask.on_get request ")
+        print(f"StatusTask.on_get request {req}")
         sig_check = verSig.process_request(req, resp)
         if sig_check:
             print(f"UploadTask.on_post: Invalid signature on headers")
@@ -337,7 +337,25 @@ def swagger_ui(app):
                                                                 "size": 3390,
                                                                 "message": "No signatures found in manifest file"
                                         }]}}}}},
-                                        }}
+                                        }},
+                    "/verify/header":{"get":{"tags":["default"],
+                                        "summary":"returns if the headers are properly signed",
+                                        "parameters":[
+                                            {"in":"header","name":"Signature","required":"true",
+                                             "schema":{"type":"string","example":"indexed=\"?0\";signify=\"0BB86jS2w9PKL1t-5hZIxgF9-vMNz4DsoASJR_f-u8FvnywdvosPOqbXUo97LuS-pYH_K_BPpfA2Y0XsGb2pSBoL\""},
+                                             "description":"The signature of the data"},
+                                            {"in":"header","name":"Signature-Input","required":"true",
+                                             "schema":{"type":"string","example":"signify=(\"@method\" \"@path\" \"signify-resource\" \"signify-timestamp\");created=1690922901;keyid=\"BPmhSfdhCPxr3EqjxzEtF8TVy0YX7ATo0Uc8oo2cnmY9\";alg=\"ed25519\""},
+                                             "description":"The signature of the data"},
+                                            {"in":"header","name":"Signify-Resource","required":"true",
+                                             "schema":{"type":"string","example":"EBcIURLpxmVwahksgrsGW6_dUw0zBhyEHYFk17eWrZfk"},
+                                             "description":"The signature of the data"},
+                                            {"in":"header","name":"Signify-Timestamp","required":"true",
+                                             "schema":{"type":"string","example":"2023-08-01T20:48:21.885000+00:00"},
+                                             "description":"The signature of the data"}
+                                        ],
+                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "200 OK", "message": "AID and vLEI valid login"}}}}}},
+                                        }},
                     }}
 
     doc = api_doc(app, config=config, url_prefix='/api/doc', title='API doc', editor=True)
