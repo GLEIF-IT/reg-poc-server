@@ -359,7 +359,7 @@ def swagger_ui(app):
                                              "schema":{"type":"string","example":"2023-08-01T20:48:21.885000+00:00"},
                                              "description":"The signature of the data"}
                                         ],
-                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{"status": "202 ACCEPTED"}}}}}},
+                                        "responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","example":{}}}}}},
                                         }},
                     }}
 
