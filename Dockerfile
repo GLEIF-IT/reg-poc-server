@@ -1,17 +1,6 @@
-# base image
-FROM python:3.11-alpine
+FROM python:3.10.4-alpine3.16
 
-RUN apk update
-RUN apk add bash
-RUN apk add git
-
-# set working directory
-WORKDIR /usr/src/app/regps
-
-# add app
-COPY ./src /usr/src/app/regps/src
-COPY ./setup.py /usr/src/app/regps/setup.py
-COPY ./requirements.txt /usr/src/app/regps/requirements.txt
-
-# install requirements
+WORKDIR /server
+COPY ./ ./ 
 RUN pip install --no-cache-dir -r requirements.txt
+WORKDIR /server/src/regps
