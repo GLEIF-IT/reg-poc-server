@@ -71,12 +71,11 @@ setup(
     install_requires=[
         'apispec>=6.3.0',
         'asyncio>=3.4.3',
-        'celery>=5.3.0',
         'dataclasses_json>=0.5.7',
         'falcon>=3.1.0',
         'gunicorn>=20.1.0',
         'http_sfv>=0.9.8',
-        'redis>=4.5.5',
+        'keri>=1.0.0',
         'requests>=2.31.0',
         'swagger-ui-py>=22.7.13'
     ],
