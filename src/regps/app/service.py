@@ -164,7 +164,7 @@ class UploadTask(object):
                 resp.status = falcon.HTTP_401    
             else:    
                 print(f"UploadTask.on_post added uploadStatus for {aid}: {dig}")
-                uploadStatus[f"{aid}"].append(resp.text)
+                uploadStatus[f"{aid}"].append(json.loads(resp.text))
         except Exception as e:
             print(f"UploadTask.on_post: Exception: {e}")
             resp.text = f"Exception: {e}"
