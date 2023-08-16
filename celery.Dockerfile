@@ -4,3 +4,5 @@ WORKDIR /server
 COPY ./ ./ 
 RUN pip install --no-cache-dir -r requirements.txt
 WORKDIR /server/src/regps
+
+ENTRYPOINT [ "celery", "-A", "app.tasks", "worker", "--loglevel=debug" ]
