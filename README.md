@@ -9,19 +9,10 @@ Provides the ability to:
 * Upload signed files
 * Check the status of an upload
 
-In two seperate terminals run:
-
-```
-cd src/regps; celery -A app.tasks worker -l DEBUG
-```
-
-and
-
+In a terminal run:
 ```
 cd src/regps; gunicorn -b 0.0.0.0:8000 app:app --reload
 ```
-
-Requires a running [Redis](https://redis.io/) instance on the default port. 
 
 ### Webapp
 The web app (UI front-end) uses Signify/KERIA for selecting identifiers and credentials:
